@@ -70,7 +70,7 @@ Update the frontend to use backend-only uploads without user authentication:
 // Updated configuration for service account backend
 const CONFIG = {
   // Remove Google API keys (not needed for service account)
-  BACKEND_URL: isDevelopment ? 'http://localhost:8001' : 'https://api.labreporttool.xyz',
+  BACKEND_URL: isDevelopment ? 'http://localhost:8001' : 'https://pharmacy-compliance-backend.onrender.com',
   
   // Service account handles authentication
   USE_SERVICE_ACCOUNT: true,

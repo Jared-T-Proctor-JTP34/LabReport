@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: pharmacy-compliance-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python BACKEND_SERVICE_ACCOUNT.py
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: TARGET_EMAIL
+        value: labreporting1177@gmail.com
+      - key: TARGET_FOLDER_ID
+        value: 1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc
+      - key: SERVICE_ACCOUNT_EMAIL
+        value: pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com
+      - key: GOOGLE_PROJECT_ID
+        value: lap-reports
+      - key: GOOGLE_CLIENT_ID
+        value: 113380403214174229428
+      # Note: Sensitive values like GOOGLE_PRIVATE_KEY and GOOGLE_PRIVATE_KEY_ID
+      # should be set manually in Render dashboard for security

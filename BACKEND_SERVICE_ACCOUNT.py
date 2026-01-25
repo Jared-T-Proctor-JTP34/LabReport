@@ -2,6 +2,7 @@
 """
 Google Drive Backend with Service Account Authentication
 Automatic uploads for labreporting1177@gmail.com
+Optimized for Render.com deployment
 """
 
 import os
@@ -18,11 +19,11 @@ import io
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
+# Configuration - supports both local and Render deployment
 CONFIG = {
-    'TARGET_EMAIL': 'labreporting1177@gmail.com',
-    'TARGET_FOLDER_ID': '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc',
-    'SERVICE_ACCOUNT_EMAIL': 'pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com',
+    'TARGET_EMAIL': os.environ.get('TARGET_EMAIL', 'labreporting1177@gmail.com'),
+    'TARGET_FOLDER_ID': os.environ.get('TARGET_FOLDER_ID', '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc'),
+    'SERVICE_ACCOUNT_EMAIL': os.environ.get('SERVICE_ACCOUNT_EMAIL', 'pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com'),
     'SERVICE_ACCOUNT_FILE': 'service-account-key.json',
     'SCOPES': ['https://www.googleapis.com/auth/drive.file']
 }
@@ -33,24 +34,46 @@ class GoogleDriveService:
         self.credentials = None
         self.initialize_service()
     
-    def initialize_service(self):
-        """Initialize Google Drive service with service account"""
-        try:
-            # Check if service account file exists
-            if not os.path.exists(CONFIG['SERVICE_ACCOUNT_FILE']):
-                print(f"❌ Service account file not found: {CONFIG['SERVICE_ACCOUNT_FILE']}")
-                print("📋 Please follow these steps:")
-                print("1. Create service account in Google Cloud Console")
-                print("2. Download JSON key file")
-                print("3. Rename to 'service-account-key.json'")
-                print("4. Place in same directory as this script")
-                return False
-            
-            # Load service account credentials
-            self.credentials = service_account.Credentials.from_service_account_file(
+    def get_credentials(self):
+        """Get credentials from file or environment variables"""
+        # Try local file first (for development)
+        if os.path.exists(CONFIG['SERVICE_ACCOUNT_FILE']):
+            print(f"📁 Using local service account file: {CONFIG['SERVICE_ACCOUNT_FILE']}")
+            return service_account.Credentials.from_service_account_file(
                 CONFIG['SERVICE_ACCOUNT_FILE'],
                 scopes=CONFIG['SCOPES']
             )
+        
+        # Use environment variables (for Render deployment)
+        elif all(key in os.environ for key in ['GOOGLE_PROJECT_ID', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_CLIENT_EMAIL']):
+            print("☁️ Using environment variables for service account")
+            service_account_info = {
+                "type": "service_account",
+                "project_id": os.environ.get('GOOGLE_PROJECT_ID'),
+                "private_key_id": os.environ.get('GOOGLE_PRIVATE_KEY_ID'),
+                "private_key": os.environ.get('GOOGLE_PRIVATE_KEY').replace('\\n', '\n'),
+                "client_email": os.environ.get('GOOGLE_CLIENT_EMAIL'),
+                "client_id": os.environ.get('GOOGLE_CLIENT_ID'),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{os.environ.get('GOOGLE_CLIENT_EMAIL').replace('@', '%40')}",
+                "universe_domain": "googleapis.com"
+            }
+            
+            return service_account.Credentials.from_service_account_info(
+                service_account_info,
+                scopes=CONFIG['SCOPES']
+            )
+        
+        else:
+            raise Exception("No service account credentials found. Please provide either service-account-key.json file or environment variables.")
+    
+    def initialize_service(self):
+        """Initialize Google Drive service with service account"""
+        try:
+            # Get credentials
+            self.credentials = self.get_credentials()
             
             # Build Drive service
             self.service = build('drive', 'v3', credentials=self.credentials)
@@ -310,18 +333,72 @@ if __name__ == '__main__':
     print("🚀 Starting Google Drive Backend with Service Account")
     print(f"📧 Target email: {CONFIG['TARGET_EMAIL']}")
     print(f"📁 Target folder: {CONFIG['TARGET_FOLDER_ID']}")
-    print(f"🔑 Service account file: {CONFIG['SERVICE_ACCOUNT_FILE']}")
     print("")
+    
+    # Detect deployment environment
+    is_render = os.environ.get('RENDER') is not None
+    is_local = not is_render
+    
+    if is_render:
+        print("☁️ Render deployment detected")
+        print("🔑 Using environment variables for service account")
+    else:
+        print("🏠 Local development mode")
+        print(f"🔑 Service account file: {CONFIG['SERVICE_ACCOUNT_FILE']}")
     
     if not drive_service.service:
         print("⚠️ Google Drive service not ready")
-        print("📋 Visit http://localhost:8001/setup-guide for setup instructions")
+        if is_local:
+            print("📋 Visit http://localhost:8001/setup-guide for setup instructions")
+        else:
+            print("📋 Check environment variables and folder sharing")
     else:
         print("✅ Google Drive service ready for automatic uploads")
     
     print("")
-    print("🌐 Backend running at: http://localhost:8001")
-    print("📊 Status endpoint: http://localhost:8001/status")
-    print("🧪 Test upload: http://localhost:8001/test-upload")
     
-    app.run(host='0.0.0.0', port=8001, debug=True)
+    # Get port from environment variable (for Render) or default to 8001
+    port = int(os.environ.get('PORT', 8001))
+    host = '0.0.0.0'  # Allow external connections
+    
+    if is_render:
+        print(f"🌐 Render backend running on port: {port}")
+        print("📊 Status endpoint: /status")
+        print("🧪 Test upload: /test-upload")
+    else:
+        print(f"🌐 Backend running at: http://localhost:{port}")
+        print(f"📊 Status endpoint: http://localhost:{port}/status")
+        print(f"🧪 Test upload: http://localhost:{port}/test-upload")
+    
+    # Use gunicorn for production (Render) or Flask dev server for local
+    if is_render:
+        # Production mode with gunicorn
+        import gunicorn.app.base
+        
+        class StandaloneApplication(gunicorn.app.base.BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+            
+            def load_config(self):
+                for key, value in self.options.items():
+                    self.cfg.set(key.lower(), value)
+            
+            def load(self):
+                return self.application
+        
+        options = {
+            'bind': f'{host}:{port}',
+            'workers': 1,
+            'threads': 8,
+            'timeout': 300,
+            'keepalive': 2,
+            'max_requests': 1000,
+            'max_requests_jitter': 100,
+        }
+        
+        StandaloneApplication(app, options).run()
+    else:
+        # Development mode with Flask dev server
+        app.run(host=host, port=port, debug=True)
