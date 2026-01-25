@@ -371,20 +371,20 @@ th {
   </div>
 </div>
 
-<!-- System Status with Service Account Integration -->
+<!-- System Status with Render Cloud Integration -->
 <div id="systemStatus" class="system-status">
   <div style="display:flex;align-items:center;gap:10px;">
-    <div id="statusSymbol" style="font-size:24px;" title="Service Account Google Drive Integration">🔄</div>
+    <div id="statusSymbol" style="font-size:24px;" title="Render Cloud Backend with Google Drive Integration">🔄</div>
     <div>
       <strong>System Status:</strong> <span id="systemStatusText">Initializing...</span>
-      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to service account backend...</div>
+      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to Render cloud backend...</div>
     </div>
   </div>
   <div style="font-size:11px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.3);border-radius:4px;">
-    <strong>📋 Service Account Integration:</strong> Reports automatically upload to <strong>labreporting1177@gmail.com</strong> Google Drive
+    <strong>☁️ Render Cloud Integration:</strong> Reports automatically upload to <strong>labreporting1177@gmail.com</strong> Google Drive via secure cloud backend
     <div style="margin-top:4px;opacity:0.8;">
       <strong>🌍 Environment:</strong> <span id="environmentInfo">Detecting...</span> | 
-      <strong>🔑 Service Account:</strong> pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com
+      <strong>🚀 Backend:</strong> <span id="backendInfo">pharmacy-compliance-backend.onrender.com</span>
     </div>
   </div>
 </div>
@@ -617,31 +617,31 @@ async function checkBackendStatus() {
   console.log(`🔍 Environment check: isDevelopment=${isDevelopment}, isProduction=${isProduction}`);
   console.log(`🌐 Current hostname: ${location.hostname}`);
   
-  // Check if service account backend is available
+  // Check if Render cloud backend is available
   try {
-    console.log(`🔄 Attempting to connect to service account backend: ${CONFIG.BACKEND_URL}/status`);
+    console.log(`🔄 Attempting to connect to Render backend: ${CONFIG.BACKEND_URL}/status`);
     const response = await fetch(`${CONFIG.BACKEND_URL}/status`);
     if (response.ok) {
       const status = await response.json();
       state.backend_available = true;
       
       if (status.drive_service_ready) {
-        updateSystemStatus('connected', 'Google Drive Connected (Service Account)', 
-          `Automatic uploads to ${CONFIG.TARGET_EMAIL} - No authentication required`);
-        console.log('✅ Service account backend connected with Google Drive ready');
+        updateSystemStatus('connected', 'Render Cloud Connected ✅', 
+          `Secure cloud backend ready - Automatic uploads to ${CONFIG.TARGET_EMAIL}`);
+        console.log('✅ Render backend connected with Google Drive ready');
       } else {
-        updateSystemStatus('warning', 'Backend Connected (Drive Setup Needed)', 
-          'Backend service running but Google Drive setup incomplete');
-        console.log('⚠️ Backend connected but Google Drive service not ready');
+        updateSystemStatus('warning', 'Render Connected (Drive Setup Needed)', 
+          'Cloud backend running but Google Drive setup incomplete');
+        console.log('⚠️ Render backend connected but Google Drive service not ready');
       }
       return true;
     }
     throw new Error('Backend service not responding');
   } catch (error) {
     state.backend_available = false;
-    updateSystemStatus('warning', 'Service Account Backend Offline', 
-      'Reports will download locally until backend service is started');
-    console.log('⚠️ Service account backend not available:', error.message);
+    updateSystemStatus('warning', 'Render Backend Offline', 
+      'Cloud backend unavailable - Reports will download locally until service is restored');
+    console.log('⚠️ Render cloud backend not available:', error.message);
     return false;
   }
 }
@@ -929,8 +929,8 @@ function updateSystemStatus(status, text, details) {
     // Update status symbol based on connection status
     switch(status) {
       case 'connected':
-        statusSymbol.textContent = '✅';
-        statusSymbol.title = 'Google Drive API Connected - Ready to upload reports';
+        statusSymbol.textContent = '🚀';
+        statusSymbol.title = 'Render Cloud Backend Connected - Ready to upload reports to Google Drive';
         // Make status clickable for re-authentication if needed
         if (isProduction && !state.google_authenticated) {
           statusSymbol.style.cursor = 'pointer';
@@ -939,7 +939,7 @@ function updateSystemStatus(status, text, details) {
         break;
       case 'warning':
         statusSymbol.textContent = '⚠️';
-        statusSymbol.title = isProduction ? 'Click to authenticate with Google Drive' : 'Backend service offline - Files will download locally';
+        statusSymbol.title = isProduction ? 'Click to authenticate with Google Drive' : 'Render backend offline - Files will download locally';
         // Make clickable on GitHub Pages for authentication
         if (isProduction) {
           statusSymbol.style.cursor = 'pointer';
@@ -948,6 +948,16 @@ function updateSystemStatus(status, text, details) {
         break;
       case 'error':
         statusSymbol.textContent = '❌';
+        statusSymbol.title = 'Connection failed - Reports will download locally';
+        break;
+      case 'info':
+        statusSymbol.textContent = '🔄';
+        statusSymbol.title = 'Connecting to Render cloud backend...';
+        break;
+      default:
+        statusSymbol.textContent = '🔄';
+        statusSymbol.title = 'Initializing Render cloud connection...';
+    }
         statusSymbol.title = 'Connection error - Check backend service or Google API';
         break;
       case 'info':
