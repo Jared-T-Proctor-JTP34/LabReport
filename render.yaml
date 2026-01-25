@@ -3,8 +3,9 @@ services:
     name: pharmacy-compliance-backend
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python BACKEND_SERVICE_ACCOUNT.py
+    rootDir: .
+    buildCommand: pip install -r ./requirements.txt
+    startCommand: python ./BACKEND_SERVICE_ACCOUNT.py
     envVars:
       - key: PORT
         value: 10000
