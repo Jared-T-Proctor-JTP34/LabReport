@@ -55,3 +55,17 @@ pids
 *.url
 *.lnk
 compounding-compliance-log.html.txt
+
+# SECURITY: Authentication secrets and keys
+service-account-key.json
+service-account-key*.json
+*.pem
+*.key
+*.p12
+*.pfx
+.credentials/
+auth/
+secrets/
+
+# Local development backups
+local_backups/
