@@ -201,6 +201,29 @@ def status():
         'timestamp': datetime.now().isoformat()
     })
 
+@app.route('/health', methods=['GET'])
+def health():
+    """Simple health check for Render"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat()
+    }), 200
+
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint"""
+    return jsonify({
+        'service': 'Pharmacy Compliance Backend',
+        'status': 'running',
+        'endpoints': {
+            'status': '/status',
+            'health': '/health',
+            'upload': '/upload',
+            'test-upload': '/test-upload',
+            'setup-guide': '/setup-guide'
+        }
+    })
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Upload file to Google Drive"""
@@ -372,33 +395,40 @@ if __name__ == '__main__':
     
     # Use gunicorn for production (Render) or Flask dev server for local
     if is_render:
-        # Production mode with gunicorn
-        import gunicorn.app.base
-        
-        class StandaloneApplication(gunicorn.app.base.BaseApplication):
-            def __init__(self, app, options=None):
-                self.options = options or {}
-                self.application = app
-                super().__init__()
+        # Production mode with gunicorn - simplified for Render
+        try:
+            import gunicorn.app.base
             
-            def load_config(self):
-                for key, value in self.options.items():
-                    self.cfg.set(key.lower(), value)
+            class StandaloneApplication(gunicorn.app.base.BaseApplication):
+                def __init__(self, app, options=None):
+                    self.options = options or {}
+                    self.application = app
+                    super().__init__()
+                
+                def load_config(self):
+                    for key, value in self.options.items():
+                        if key in self.cfg.settings and value is not None:
+                            self.cfg.set(key.lower(), value)
+                
+                def load(self):
+                    return self.application
             
-            def load(self):
-                return self.application
-        
-        options = {
-            'bind': f'{host}:{port}',
-            'workers': 1,
-            'threads': 8,
-            'timeout': 300,
-            'keepalive': 2,
-            'max_requests': 1000,
-            'max_requests_jitter': 100,
-        }
-        
-        StandaloneApplication(app, options).run()
+            # Simplified options for Render
+            options = {
+                'bind': f'{host}:{port}',
+                'workers': 1,
+                'timeout': 120,
+                'preload_app': True,
+            }
+            
+            print(f"🚀 Starting gunicorn server on {host}:{port}")
+            StandaloneApplication(app, options).run()
+            
+        except Exception as e:
+            print(f"❌ Gunicorn failed to start: {e}")
+            print("🔄 Falling back to Flask development server...")
+            app.run(host=host, port=port, debug=False)
     else:
         # Development mode with Flask dev server
+        print(f"🏠 Starting Flask development server on {host}:{port}")
         app.run(host=host, port=port, debug=True)
