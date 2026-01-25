@@ -7,8 +7,6 @@ services:
     buildCommand: pip install -r ./requirements.txt
     startCommand: python ./BACKEND_SERVICE_ACCOUNT.py
     envVars:
-      - key: PORT
-        value: 10000
       - key: TARGET_EMAIL
         value: labreporting1177@gmail.com
       - key: TARGET_FOLDER_ID
@@ -21,3 +19,4 @@ services:
         value: 113380403214174229428
       # Note: Sensitive values like GOOGLE_PRIVATE_KEY and GOOGLE_PRIVATE_KEY_ID
       # should be set manually in Render dashboard for security
+      # Note: PORT is automatically assigned by Render - do not set manually

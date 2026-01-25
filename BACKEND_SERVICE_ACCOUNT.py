@@ -357,8 +357,8 @@ if __name__ == '__main__':
     
     print("")
     
-    # Get port from environment variable (for Render) or default to 8001
-    port = int(os.environ.get('PORT', 8001))
+    # Get port from environment variable (Render assigns this automatically)
+    port = int(os.environ.get('PORT', 8001))  # Render will override this with its own port
     host = '0.0.0.0'  # Allow external connections
     
     if is_render:

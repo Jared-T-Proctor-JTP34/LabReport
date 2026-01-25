@@ -4,9 +4,11 @@ RENDER ENVIRONMENT VARIABLES - SECURE VERSION
 ⚠️ SECURITY NOTE: Private keys have been removed from this file for security.
 You must get the private key from your local service-account-key.json file.
 
+⚠️ PORT NOTE: Render automatically assigns the PORT environment variable.
+Do NOT set PORT manually - Render will handle this automatically.
+
 Basic Configuration:
 -------------------
-PORT=10000
 TARGET_EMAIL=labreporting1177@gmail.com
 TARGET_FOLDER_ID=1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc
 SERVICE_ACCOUNT_EMAIL=pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com
@@ -28,5 +30,6 @@ INSTRUCTIONS:
 3. Replace newlines with \n (e.g., -----BEGIN PRIVATE KEY-----\n...)
 4. Set as GOOGLE_PRIVATE_KEY environment variable in Render
 5. NEVER commit the actual private key to version control
+6. DO NOT set PORT - Render assigns this automatically
 
 Expected Render URL: https://pharmacy-compliance-backend.onrender.com
