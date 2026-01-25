@@ -1,0 +1,35 @@
+🚀 QUICK REFERENCE: DNS Records for labreporttool.xyz
+
+═══════════════════════════════════════════════════════════════
+
+❌ DELETE THESE CURRENT RECORDS:
+- A record: @ → WebsiteBuilder Site
+- A record: www → 15.197.225.128  
+- A record: www → 3.33.251.168
+
+═══════════════════════════════════════════════════════════════
+
+✅ ADD THESE NEW RECORDS:
+
+A RECORDS (add all 4):
+Type: A | Name: @ | Value: 185.199.108.153 | TTL: 1 Hour
+Type: A | Name: @ | Value: 185.199.109.153 | TTL: 1 Hour  
+Type: A | Name: @ | Value: 185.199.110.153 | TTL: 1 Hour
+Type: A | Name: @ | Value: 185.199.111.153 | TTL: 1 Hour
+
+WWW RECORD (update existing):
+Type: CNAME | Name: www | Value: jared-t-proctor-jtp34.github.io | TTL: 1 Hour
+
+═══════════════════════════════════════════════════════════════
+
+🔒 KEEP THESE (don't change):
+- NS: ns41.domaincontrol.com
+- NS: ns42.domaincontrol.com  
+- TXT: _dmarc record
+- CNAME: _domainconnect
+
+═══════════════════════════════════════════════════════════════
+
+📍 GoDaddy Login: https://account.godaddy.com/products
+🔍 DNS Checker: https://www.whatsmydns.net/#A/labreporttool.xyz
+⚙️ GitHub Pages: https://github.com/Jared-T-Proctor-JTP34/LabReport/settings/pages
