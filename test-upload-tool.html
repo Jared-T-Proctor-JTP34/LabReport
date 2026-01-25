@@ -168,6 +168,8 @@
     <!-- Google APIs -->
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         // Your Google API configuration
@@ -227,20 +229,48 @@
         }
 
         async function initializeAPIs() {
+            // Check if we're running on HTTPS or localhost
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            
+            if (!isSecure) {
+                addResult('error', '🔒 Google APIs require HTTPS or localhost');
+                addResult('warning', '⚠️ To test Google Drive functionality:');
+                addResult('info', '1. Deploy to your domain (labreporttool.xyz)');
+                addResult('info', '2. Or run a local HTTPS server');
+                addResult('info', '3. Or test with localhost server');
+                return;
+            }
+            
             try {
-                if (typeof gapi !== 'undefined') {
-                    await new Promise(resolve => {
-                        gapi.load('client', resolve);
-                    });
-                    await initializeGapiClient();
+                // Check if Google APIs are available
+                if (typeof gapi === 'undefined') {
+                    addResult('error', '❌ Google API (gapi) not loaded - check internet connection');
+                    return;
                 }
                 
-                if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID) {
+                if (typeof google === 'undefined') {
+                    addResult('error', '❌ Google Identity Services not loaded - check internet connection');
+                    return;
+                }
+                
+                addResult('info', '🔄 Initializing Google APIs...');
+                
+                // Initialize GAPI
+                await new Promise(resolve => {
+                    gapi.load('client', resolve);
+                });
+                await initializeGapiClient();
+                
+                // Initialize GIS
+                if (GOOGLE_CLIENT_ID) {
                     initializeGisClient();
+                } else {
+                    addResult('error', '❌ Google Client ID not configured');
                 }
                 
             } catch (error) {
-                addResult('error', `API initialization failed: ${error.message}`);
+                addResult('error', `❌ API initialization failed: ${error.message}`);
+                console.error('Full error:', error);
             }
         }
 
@@ -328,7 +358,10 @@
                 return;
             }
             
-            // Generate document content
+            // Generate PDF document using jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
             const areaNames = {
                 '795': 'Non-Sterile Compounding Area (USP <795>)',
                 '797': 'Sterile Compounding Area (USP <797>)',
@@ -336,162 +369,101 @@
             };
             
             const areaColors = {
-                '795': '#27ae60',
-                '797': '#3498db', 
-                '800': '#e67e22'
+                '795': [39, 174, 96],   // Green RGB
+                '797': [52, 152, 219],  // Blue RGB  
+                '800': [230, 126, 34]   // Orange RGB
             };
             
+            const primaryColor = areaColors[area];
+            const textColor = [44, 62, 80];
+            const lightGray = [248, 249, 250];
             const timestamp = new Date().toLocaleString();
             const today = new Date().toLocaleDateString();
             
-            generatedDocument = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>${areaNames[area]} Compliance Report</title>
-  <style>
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      margin: 40px; 
-      line-height: 1.6; 
-      color: #2c3e50;
-    }
-    .header { 
-      text-align: center; 
-      border-bottom: 4px solid ${areaColors[area]}; 
-      padding-bottom: 25px; 
-      margin-bottom: 35px; 
-    }
-    .header h1 { 
-      color: ${areaColors[area]}; 
-      font-weight: 700; 
-      margin: 0; 
-      font-size: 28px; 
-    }
-    .header .subtitle {
-      font-size: 16px;
-      color: #7f8c8d;
-      margin-top: 10px;
-    }
-    .summary { 
-      background: #f8f9fa; 
-      padding: 15px; 
-      border-radius: 8px; 
-      margin: 20px 0; 
-      border-left: 4px solid ${areaColors[area]}; 
-      text-align: center;
-    }
-    .summary h3 {
-      color: ${areaColors[area]};
-      margin: 0 0 5px 0;
-      font-size: 16px;
-    }
-    .summary p {
-      margin: 0;
-      font-size: 14px;
-      color: #7f8c8d;
-    }
-    .record-card {
-      background: white;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      margin: 15px 0;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .record-header {
-      background: ${areaColors[area]};
-      color: white;
-      padding: 15px 20px;
-      font-weight: 600;
-      font-size: 16px;
-    }
-    .record-content {
-      padding: 20px;
-    }
-    .record-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-    .record-field {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 6px;
-      border-left: 3px solid ${areaColors[area]};
-    }
-    .record-field strong {
-      display: block;
-      color: ${areaColors[area]};
-      font-size: 12px;
-      text-transform: uppercase;
-      margin-bottom: 5px;
-    }
-    .record-field span {
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .status-compliant {
-      background: #d4edda;
-      color: #155724;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-weight: 600;
-      display: inline-block;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>🧪 ${areaNames[area]}</h1>
-    <div class="subtitle">Environmental Monitoring & Compliance Report</div>
-    <p><strong>Generated:</strong> ${today} | <strong>By:</strong> ${staff}</p>
-  </div>
-  
-  <div class="summary">
-    <h3>📊 Summary</h3>
-    <p>Environmental monitoring data for ${areaNames[area]} - USP compliance tracking.</p>
-  </div>
-  
-  <div class="record-card">
-    <div class="record-header">
-      Compliance Record - ${timestamp}
-    </div>
-    <div class="record-content">
-      <div class="record-grid">
-        <div class="record-field">
-          <strong>Temperature</strong>
-          <span>${temp}°F</span>
-        </div>
-        <div class="record-field">
-          <strong>Humidity</strong>
-          <span>${hum}% RH</span>
-        </div>
-        ${pressure !== null ? `
-        <div class="record-field">
-          <strong>Air Pressure</strong>
-          <span>${pressure}" WC</span>
-        </div>
-        ` : ''}
-        <div class="record-field">
-          <strong>Recorded By</strong>
-          <span>${staff}</span>
-        </div>
-        <div class="record-field">
-          <strong>Compliance Status</strong>
-          <span class="status-compliant">✅ COMPLIANT</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #ecf0f1; text-align: center; color: #7f8c8d; font-size: 12px;">
-    <p>This report was generated automatically by the Pharmacy Compounding Compliance Log system.</p>
-    <p>For questions or concerns regarding compliance, contact your Quality Assurance department.</p>
-  </div>
-</body>
-</html>`;
+            // Header
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, 210, 30, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('🧪 Pharmacy Compliance Report - TEST', 20, 15);
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(areaNames[area], 20, 22);
+            
+            // Reset text color
+            doc.setTextColor(...textColor);
+            
+            // Report info
+            let yPos = 45;
+            doc.setFontSize(10);
+            doc.text(`Generated: ${today}`, 20, yPos);
+            doc.text(`By: ${staff}`, 120, yPos);
+            yPos += 15;
+            
+            // Summary section
+            doc.setFillColor(...lightGray);
+            doc.rect(15, yPos, 180, 25, 'F');
+            
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('📊 Test Compliance Record', 20, yPos + 8);
+            
+            doc.setTextColor(...textColor);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Area: ${areaNames[area]}`, 20, yPos + 15);
+            doc.text(`Status: COMPLIANT ✅`, 120, yPos + 15);
+            
+            yPos += 35;
+            
+            // Data section
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('📋 Monitoring Data', 20, yPos);
+            
+            doc.setTextColor(...textColor);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            yPos += 10;
+            
+            doc.text(`Temperature: ${temp}°F (Compliant: 68-77°F)`, 25, yPos);
+            yPos += 8;
+            doc.text(`Humidity: ${hum}% RH (Compliant: ≤60% RH)`, 25, yPos);
+            yPos += 8;
+            
+            if (pressure !== null) {
+                const pressureRange = area === '797' ? '+0.01 to +0.05" WC' : '-0.01 to -0.05" WC';
+                doc.text(`Air Pressure: ${pressure}" WC (Compliant: ${pressureRange})`, 25, yPos);
+                yPos += 8;
+            }
+            
+            doc.text(`Recorded by: ${staff}`, 25, yPos);
+            yPos += 8;
+            doc.text(`Timestamp: ${timestamp}`, 25, yPos);
+            
+            yPos += 20;
+            
+            // Compliance confirmation
+            doc.setFillColor(212, 237, 218);
+            doc.rect(15, yPos, 180, 20, 'F');
+            
+            doc.setTextColor(21, 87, 36);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('✅ ALL PARAMETERS WITHIN USP COMPLIANCE LIMITS', 20, yPos + 12);
+            
+            // Footer
+            doc.setTextColor(108, 117, 125);
+            doc.setFontSize(8);
+            doc.text('Generated by Pharmacy Compounding Compliance Log System - TEST MODE', 20, 285);
+            
+            // Generate PDF as blob
+            generatedDocument = doc.output('blob');
             
             // Show preview
             document.getElementById('previewSection').style.display = 'block';
@@ -516,9 +488,11 @@
             
             addResult('info', '📤 Uploading document to Google Drive...');
             
-            const area = document.getElementById('areaSelect').value;
-            const areaName = area === '795' ? 'Non-Sterile' : area === '797' ? 'Sterile' : 'Hazardous';
-            const fileName = `${areaName}_USP_${area}_Report_${new Date().toISOString().split('T')[0]}_TEST.html`;
+            const fileName = `Labreport - ${new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            }).replace(/\//g, '-')} - TEST.pdf`;
             
             try {
                 const metadata = {
