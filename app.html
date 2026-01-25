@@ -5,6 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pharmacy Compounding Compliance Log</title>
 
+<!--
+GOOGLE DRIVE SETUP INSTRUCTIONS:
+To enable Google Drive uploads, follow these steps:
+
+1. Go to Google Cloud Console (https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google Drive API:
+   - Go to "APIs & Services" > "Library"
+   - Search for "Google Drive API" and enable it
+4. Create OAuth2 credentials:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth 2.0 Client IDs"
+   - Set application type to "Web application"
+   - Add your domain to "Authorized JavaScript origins"
+   - Add your domain to "Authorized redirect URIs"
+5. Create an API Key:
+   - Click "Create Credentials" > "API Key"
+   - Restrict the key to Google Drive API
+6. Replace the empty strings below with your credentials:
+   - GOOGLE_CLIENT_ID: Your OAuth2 Client ID
+   - GOOGLE_API_KEY: Your API Key
+
+Until configured, files will download locally instead of uploading to Google Drive.
+-->
+
 <style>
 body { 
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -68,6 +93,25 @@ th {
 }
 .out { 
   background: #ffe6e6; 
+}
+
+/* Google Drive Status */
+.drive-status {
+  background: #e8f4fd;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+  border-left: 4px solid #4285f4;
+}
+.drive-status.connected {
+  background: #d4edda;
+  border-left-color: #28a745;
+  color: #155724;
+}
+.drive-status.error {
+  background: #f8d7da;
+  border-left-color: #dc3545;
+  color: #721c24;
 }
 
 /* Tab Styles */
@@ -187,83 +231,6 @@ th {
 .cleaning-label:hover {
   background-color: #f8f9fa;
 }
-
-/* History section styling */
-.history-section {
-  margin-top: 30px;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.history-header {
-  background: #f8f9fa;
-  padding: 15px 20px;
-  cursor: pointer;
-  border-bottom: 1px solid #dee2e6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background-color 0.2s;
-}
-
-.history-header:hover {
-  background: #e9ecef;
-}
-
-.history-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #495057;
-}
-
-.history-toggle {
-  font-size: 18px;
-  color: #6c757d;
-  transition: transform 0.2s;
-}
-
-.history-toggle.expanded {
-  transform: rotate(180deg);
-}
-
-.history-content {
-  display: none;
-  padding: 20px;
-  background: white;
-}
-
-.history-content.show {
-  display: block;
-}
-
-.history-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
-
-.history-stat {
-  text-align: center;
-}
-
-.history-stat .number {
-  font-size: 24px;
-  font-weight: 700;
-  color: #495057;
-  display: block;
-}
-
-.history-stat .label {
-  font-size: 12px;
-  color: #6c757d;
-  text-transform: uppercase;
-  font-weight: 600;
-}
 </style>
 </head>
 
@@ -279,9 +246,9 @@ th {
     tech / sterile789
   </div>
   <label>Username</label>
-  <input type="text" id="loginUser" onkeypress="handleLoginKeyPress(event)">
+  <input type="text" id="loginUser">
   <label>Password</label>
-  <input type="password" id="loginPass" onkeypress="handleLoginKeyPress(event)">
+  <input type="password" id="loginPass">
   <button onclick="login()">Login</button>
   <p id="loginError" class="alert" style="display:none">Invalid credentials</p>
 </div>
@@ -291,7 +258,16 @@ th {
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:15px 0;border-bottom:2px solid #ecf0f1;">
   <h1 style="margin:0;">Pharmacy Compounding Compliance Log</h1>
-  <button onclick="logout()" style="background:#e74c3c;padding:10px 20px;">Logout</button>
+  <div>
+    <button onclick="toggleGoogleDriveAuth()" id="driveAuthBtn" style="background:#4285f4;padding:8px 15px;margin-right:10px;">Connect Google Drive</button>
+    <button onclick="logout()" style="background:#e74c3c;padding:10px 20px;">Logout</button>
+  </div>
+</div>
+
+<!-- Google Drive Status -->
+<div id="driveStatus" class="drive-status">
+  <strong>📁 Google Drive Status:</strong> <span id="driveStatusText">Not connected</span>
+  <div id="driveDetails" style="font-size:12px;margin-top:5px;"></div>
 </div>
 
 <!-- Tabbed Interface -->
@@ -328,27 +304,15 @@ th {
   </div>
   
   <button onclick="recordData('795')" style="background:#27ae60;padding:15px;font-size:16px;">
-    📊 Get Report
+    💾 Record & Upload to Google Drive
   </button>
   
-  <!-- History Section -->
-  <div class="history-section">
-    <div class="history-header" onclick="toggleHistory('795')">
-      <h3>📊 Complete History</h3>
-      <span class="history-toggle" id="toggle795">▼</span>
-    </div>
-    <div class="history-content" id="history795">
-      <div class="history-stats" id="stats795">
-        <!-- Stats will be populated by JavaScript -->
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr><th>Date & Time</th><th>Temp (°F)</th><th>Humidity (%)</th><th>Initials</th><th>Status</th><th>Cleaning Tasks</th></tr>
-        </thead>
-        <tbody id="historyTable795"></tbody>
-      </table>
-    </div>
-  </div>
+  <table style="margin-top:20px;">
+    <thead>
+      <tr><th>Date & Time</th><th>Temp (°F)</th><th>Humidity (%)</th><th>Initials</th><th>Status</th></tr>
+    </thead>
+    <tbody id="table795"></tbody>
+  </table>
 </div>
 
 <!-- Sterile USP <797> Tab -->
@@ -376,39 +340,27 @@ th {
       <label class="cleaning-label"><input type="checkbox" id="clean797_surface" class="cleaning-checkbox"> Surface Cleaning</label>
       <label class="cleaning-label"><input type="checkbox" id="clean797_floor" class="cleaning-checkbox"> Floor Cleaning</label>
       <label class="cleaning-label"><input type="checkbox" id="clean797_equipment" class="cleaning-checkbox"> Equipment Cleaning</label>
-      <label class="cleaning-label"><input type="checkbox" id="clean797_hood" class="cleaning-checkbox"> Hood Cleaning</label>
+      <label class="cleaning-label"><input type="checkbox" id="clean797_hood" class="cleaning-checkbox"> Laminar Hood Cleaning</label>
     </div>
   </div>
   
   <button onclick="recordData('797')" style="background:#3498db;padding:15px;font-size:16px;">
-    📊 Get Report
+    💾 Record & Upload to Google Drive
   </button>
   
-  <!-- History Section -->
-  <div class="history-section">
-    <div class="history-header" onclick="toggleHistory('797')">
-      <h3>📊 Complete History</h3>
-      <span class="history-toggle" id="toggle797">▼</span>
-    </div>
-    <div class="history-content" id="history797">
-      <div class="history-stats" id="stats797">
-        <!-- Stats will be populated by JavaScript -->
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr><th>Date & Time</th><th>Temp (°F)</th><th>Humidity (%)</th><th>Pressure (" WC)</th><th>Initials</th><th>Status</th><th>Cleaning Tasks</th></tr>
-        </thead>
-        <tbody id="historyTable797"></tbody>
-      </table>
-    </div>
-  </div>
+  <table style="margin-top:20px;">
+    <thead>
+      <tr><th>Date & Time</th><th>Temp (°F)</th><th>Humidity (%)</th><th>Pressure (" WC)</th><th>Initials</th><th>Status</th></tr>
+    </thead>
+    <tbody id="table797"></tbody>
+  </table>
 </div>
 
 <!-- Hazardous USP <800> Tab -->
 <div id="hazardous" class="tab-content">
   <h2>⚠️ Hazardous Drug Compounding Area (USP &lt;800&gt;)</h2>
   <div style="background:#fdf2e8;padding:10px;border-radius:4px;margin:10px 0;font-size:12px;">
-    <strong>USP Requirements:</strong> Temperature: 68-77°F | Humidity: ≤60% RH
+    <strong>USP Requirements:</strong> Temperature: 68-77°F | Humidity: ≤60% RH | Air Pressure: -0.01 to -0.05 inches WC (negative pressure)
   </div>
   
   <label>Temperature (°F)</label>
@@ -416,6 +368,9 @@ th {
   
   <label>Humidity (%)</label>
   <input type="number" id="hum800" step="0.1">
+  
+  <label>Air Pressure (inches WC)</label>
+  <input type="number" id="pressure800" step="0.001" placeholder="e.g., -0.025">
   
   <label>Initials</label>
   <input type="text" id="staff800">
@@ -426,145 +381,42 @@ th {
       <label class="cleaning-label"><input type="checkbox" id="clean800_surface" class="cleaning-checkbox"> Surface Cleaning</label>
       <label class="cleaning-label"><input type="checkbox" id="clean800_floor" class="cleaning-checkbox"> Floor Cleaning</label>
       <label class="cleaning-label"><input type="checkbox" id="clean800_equipment" class="cleaning-checkbox"> Equipment Cleaning</label>
-      <label class="cleaning-label"><input type="checkbox" id="clean800_hood" class="cleaning-checkbox"> Hood Cleaning</label>
+      <label class="cleaning-label"><input type="checkbox" id="clean800_hood" class="cleaning-checkbox"> Containment Hood Cleaning</label>
     </div>
   </div>
   
   <button onclick="recordData('800')" style="background:#e67e22;padding:15px;font-size:16px;">
-    📊 Get Report
+    💾 Record & Upload to Google Drive
   </button>
   
-  <!-- History Section -->
-  <div class="history-section">
-    <div class="history-header" onclick="toggleHistory('800')">
-      <h3>📊 Complete History</h3>
-      <span class="history-toggle" id="toggle800">▼</span>
-    </div>
-    <div class="history-content" id="history800">
-      <div class="history-stats" id="stats800">
-        <!-- Stats will be populated by JavaScript -->
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr><th>Date & Time</th><th>Temp (°F)</th><th>Humidity (%)</th><th>Pressure (" WC)</th><th>Initials</th><th>Status</th><th>Cleaning Tasks</th></tr>
-        </thead>
-        <tbody id="historyTable800"></tbody>
-      </table>
-    </div>
-  </div>
+  <table style="margin-top:20px;">
+    <thead>
+      <tr><th>Date & Time</th><th>Temp (°F)</th><th>Humidity (%)</th><th>Initials</th><th>Status</th></tr>
+    </thead>
+    <tbody id="table800"></tbody>
+  </table>
 </div>
 
 </div>
+
+<!-- Google APIs -->
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 
 <script>
-// History toggle functionality
-function toggleHistory(area) {
-  const content = document.getElementById(`history${area}`);
-  const toggle = document.getElementById(`toggle${area}`);
-  
-  if (content.classList.contains('show')) {
-    content.classList.remove('show');
-    toggle.classList.remove('expanded');
-  } else {
-    content.classList.add('show');
-    toggle.classList.add('expanded');
-    loadHistoryData(area);
-  }
-}
+// Google Drive API Configuration
+const GOOGLE_CLIENT_ID = ''; // Set this to your Google Cloud Console Client ID
+const GOOGLE_API_KEY = ''; // Set this to your Google Cloud Console API Key
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const TARGET_FOLDER_ID = '1k_LobI2ggS0rs83VevymeA0D-RHOTYSD';
 
-// Load complete history data
-function loadHistoryData(area) {
-  let data;
-  if (area === '795') data = data795;
-  else if (area === '797') data = data797;
-  else if (area === '800') data = data800;
-  
-  // Update statistics
-  updateHistoryStats(area, data);
-  
-  // Load complete history table
-  loadHistoryTable(area, data);
-}
-
-// Update history statistics
-function updateHistoryStats(area, data) {
-  const statsDiv = document.getElementById(`stats${area}`);
-  const totalRecords = data.length;
-  const compliantRecords = data.filter(entry => entry.compliant).length;
-  const nonCompliantRecords = totalRecords - compliantRecords;
-  const complianceRate = totalRecords > 0 ? ((compliantRecords / totalRecords) * 100).toFixed(1) : 0;
-  
-  // Get date range
-  let dateRange = 'No data';
-  if (data.length > 0) {
-    const firstDate = new Date(data[0].timestamp).toLocaleDateString();
-    const lastDate = new Date(data[data.length - 1].timestamp).toLocaleDateString();
-    dateRange = firstDate === lastDate ? firstDate : `${firstDate} - ${lastDate}`;
-  }
-  
-  statsDiv.innerHTML = `
-    <div class="history-stat">
-      <span class="number">${totalRecords}</span>
-      <span class="label">Total Records</span>
-    </div>
-    <div class="history-stat">
-      <span class="number">${complianceRate}%</span>
-      <span class="label">Compliance Rate</span>
-    </div>
-    <div class="history-stat">
-      <span class="number">${compliantRecords}</span>
-      <span class="label">Compliant</span>
-    </div>
-    <div class="history-stat">
-      <span class="number">${nonCompliantRecords}</span>
-      <span class="label">Non-Compliant</span>
-    </div>
-    <div class="history-stat">
-      <span class="number">${dateRange}</span>
-      <span class="label">Date Range</span>
-    </div>
-  `;
-}
-
-// Load complete history table
-function loadHistoryTable(area, data) {
-  const table = document.getElementById(`historyTable${area}`);
-  table.innerHTML = '';
-  
-  // Show all records in reverse chronological order (newest first)
-  data.slice().reverse().forEach(entry => {
-    const row = table.insertRow();
-    row.className = entry.compliant ? '' : 'out';
-    
-    const cleaningTasks = entry.cleaningTasks && entry.cleaningTasks.length > 0 
-      ? entry.cleaningTasks.join(', ') 
-      : 'None';
-    
-    if (area === '795') {
-      // Non-sterile area - no pressure column
-      row.innerHTML = `
-        <td>${entry.timestamp}</td>
-        <td>${entry.temp}</td>
-        <td>${entry.hum}</td>
-        <td>${entry.staff}</td>
-        <td>${entry.status}</td>
-        <td>${cleaningTasks}</td>
-      `;
-    } else {
-      // Sterile and hazardous areas - include pressure column
-      const pressureValue = entry.pressure !== null && entry.pressure !== undefined ? entry.pressure : 'N/A';
-      row.innerHTML = `
-        <td>${entry.timestamp}</td>
-        <td>${entry.temp}</td>
-        <td>${entry.hum}</td>
-        <td>${pressureValue}</td>
-        <td>${entry.staff}</td>
-        <td>${entry.status}</td>
-        <td>${cleaningTasks}</td>
-      `;
-    }
-  });
-}
+// Google Drive API variables
+let gapi_loaded = false;
+let gis_loaded = false;
+let tokenClient;
+let access_token = null;
+let google_apis_available = false;
 
 // Simple credentials
 const credentials = {
@@ -585,7 +437,163 @@ let data795 = JSON.parse(localStorage.getItem("data795") || "[]");
 let data797 = JSON.parse(localStorage.getItem("data797") || "[]");
 let data800 = JSON.parse(localStorage.getItem("data800") || "[]");
 
-// Download file locally
+// Initialize Google APIs
+function gapiLoaded() {
+  if (!GOOGLE_API_KEY) {
+    console.log('Google API Key not configured');
+    return;
+  }
+  gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+  try {
+    await gapi.client.init({
+      apiKey: GOOGLE_API_KEY,
+      discoveryDocs: [DISCOVERY_DOC],
+    });
+    gapi_loaded = true;
+    google_apis_available = true;
+    maybeEnableButtons();
+  } catch (error) {
+    console.error('Failed to initialize Google API client:', error);
+    updateDriveStatus('error', 'Google Drive API Error', 'Failed to initialize API client');
+  }
+}
+
+function gisLoaded() {
+  if (!GOOGLE_CLIENT_ID) {
+    console.log('Google Client ID not configured');
+    return;
+  }
+  
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: SCOPES,
+      callback: (tokenResponse) => {
+        if (tokenResponse.error) {
+          console.error('Token error:', tokenResponse.error);
+          updateDriveStatus('error', 'Authentication Failed', tokenResponse.error);
+          return;
+        }
+        access_token = tokenResponse.access_token;
+        updateDriveStatus('connected', 'Connected to Google Drive', 'Ready to upload files');
+        document.getElementById('driveAuthBtn').textContent = 'Disconnect Google Drive';
+      },
+    });
+    gis_loaded = true;
+    google_apis_available = true;
+    maybeEnableButtons();
+  } catch (error) {
+    console.error('Failed to initialize Google Identity Services:', error);
+    updateDriveStatus('error', 'Google Drive Setup Error', 'Failed to initialize authentication');
+  }
+}
+
+function maybeEnableButtons() {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_API_KEY) {
+    updateDriveStatus('error', 'Google Drive Not Configured', 'Please set up Google Cloud Console credentials');
+    return;
+  }
+  
+  if (gapi_loaded && gis_loaded) {
+    updateDriveStatus('ready', 'Google Drive API Ready', 'Click "Connect Google Drive" to authenticate');
+  }
+}
+
+// Google Drive Authentication
+function toggleGoogleDriveAuth() {
+  if (!google_apis_available) {
+    alert('Google Drive API is not properly configured. Please check the console for setup instructions.');
+    return;
+  }
+  
+  if (access_token) {
+    // Disconnect
+    google.accounts.oauth2.revoke(access_token, () => {
+      access_token = null;
+      updateDriveStatus('ready', 'Google Drive API Ready', 'Click "Connect Google Drive" to authenticate');
+      document.getElementById('driveAuthBtn').textContent = 'Connect Google Drive';
+    });
+  } else {
+    // Connect
+    if (!gapi_loaded || !gis_loaded) {
+      alert('Google Drive API is still loading. Please wait a moment and try again.');
+      return;
+    }
+    
+    try {
+      tokenClient.requestAccessToken({prompt: 'consent'});
+    } catch (error) {
+      console.error('Authentication error:', error);
+      alert('Failed to authenticate with Google Drive. Please check your configuration.');
+    }
+  }
+}
+
+// Update Drive Status Display
+function updateDriveStatus(status, text, details) {
+  const statusDiv = document.getElementById('driveStatus');
+  const statusText = document.getElementById('driveStatusText');
+  const statusDetails = document.getElementById('driveDetails');
+  
+  statusDiv.className = `drive-status ${status}`;
+  statusText.textContent = text;
+  statusDetails.textContent = details;
+}
+
+// Upload file to Google Drive
+async function uploadToGoogleDrive(fileName, content, mimeType = 'text/csv') {
+  if (!google_apis_available) {
+    console.log('Google Drive API not available, saving locally instead');
+    downloadFile(fileName, content);
+    return true; // Return true so the rest of the flow continues
+  }
+  
+  if (!access_token) {
+    alert('Please connect to Google Drive first, or the file will be downloaded locally');
+    downloadFile(fileName, content);
+    return true;
+  }
+
+  try {
+    const metadata = {
+      name: fileName,
+      parents: [TARGET_FOLDER_ID]
+    };
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+    form.append('file', new Blob([content], {type: mimeType}));
+
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      },
+      body: form
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('File uploaded successfully:', result);
+      return true;
+    } else {
+      console.error('Upload failed:', response.statusText);
+      alert('Upload to Google Drive failed. File will be downloaded locally instead.');
+      downloadFile(fileName, content);
+      return true;
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    alert('Upload to Google Drive failed. File will be downloaded locally instead.');
+    downloadFile(fileName, content);
+    return true;
+  }
+}
+
+// Fallback: Download file locally
 function downloadFile(fileName, content) {
   const blob = new Blob([content], { type: 'text/plain' });
   const url = window.URL.createObjectURL(blob);
@@ -880,6 +888,11 @@ function getCompletedCleaningTasks(area) {
     const checkbox = document.getElementById(`clean${area}_${task}`);
     if (checkbox && checkbox.checked) {
       let taskName = task.charAt(0).toUpperCase() + task.slice(1) + ' Cleaning';
+      if (task === 'hood') {
+        if (area === '797') taskName = 'Laminar Hood Cleaning';
+        else if (area === '800') taskName = 'Containment Hood Cleaning';
+        else taskName = 'Hood Cleaning';
+      }
       tasks.push(taskName);
     }
   });
@@ -896,31 +909,19 @@ function clearCleaningCheckboxes(area) {
   });
 }
 
-// Handle Enter key press on login form
-function handleLoginKeyPress(event) {
-  if (event.key === 'Enter') {
-    login();
-  }
-}
-
 // Login function
 function login() {
-  try {
-    const user = document.getElementById("loginUser").value.trim().toLowerCase();
-    const pass = document.getElementById("loginPass").value;
-    const error = document.getElementById("loginError");
-    
-    if (credentials[user] && credentials[user] === pass) {
-      sessionStorage.setItem("loggedIn", "true");
-      sessionStorage.setItem("user", user);
-      showApp();
-    } else {
-      error.style.display = "block";
-      error.textContent = "Invalid username or password";
-    }
-  } catch (e) {
-    console.error("Login error:", e);
-    alert("Login system error. Please refresh the page and try again.");
+  const user = document.getElementById("loginUser").value.trim().toLowerCase();
+  const pass = document.getElementById("loginPass").value;
+  const error = document.getElementById("loginError");
+  
+  if (credentials[user] && credentials[user] === pass) {
+    sessionStorage.setItem("loggedIn", "true");
+    sessionStorage.setItem("user", user);
+    showApp();
+  } else {
+    error.style.display = "block";
+    error.textContent = "Invalid username or password";
   }
 }
 
@@ -935,6 +936,7 @@ function logout() {
 function showApp() {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("app").style.display = "block";
+  loadData();
 }
 
 // Check if logged in
@@ -965,20 +967,43 @@ function checkCompliance(area) {
 }
 
 // Record data
-function recordData(area) {
+async function recordData(area) {
   const temp = parseFloat(document.getElementById(`temp${area}`).value);
   const hum = parseFloat(document.getElementById(`hum${area}`).value);
   const staff = document.getElementById(`staff${area}`).value.trim();
   
+  // Get air pressure for areas that require it (797, 800)
+  let pressure = null;
+  if (area === '797' || area === '800') {
+    const pressureInput = document.getElementById(`pressure${area}`);
+    if (pressureInput) {
+      pressure = parseFloat(pressureInput.value);
+    }
+  }
+  
+  // Validate required fields
   if (isNaN(temp) || isNaN(hum) || !staff) {
-    alert("Please fill in all fields");
+    alert("Please fill in all required fields");
+    return;
+  }
+  
+  // Validate pressure for areas that require it
+  if ((area === '797' || area === '800') && (isNaN(pressure) || pressure === null)) {
+    alert("Please enter air pressure reading");
     return;
   }
   
   const limit = limits[area];
   const tempOK = temp >= limit.tMin && temp <= limit.tMax;
   const humOK = hum <= limit.hMax;
-  const compliant = tempOK && humOK;
+  
+  // Check pressure compliance for areas that require it
+  let pressureOK = true;
+  if (area === '797' || area === '800') {
+    pressureOK = pressure >= limit.pressureMin && pressure <= limit.pressureMax;
+  }
+  
+  const compliant = tempOK && humOK && pressureOK;
   
   // Get completed cleaning tasks
   const cleaningTasks = getCompletedCleaningTasks(area);
@@ -987,6 +1012,7 @@ function recordData(area) {
     timestamp: new Date().toLocaleString(),
     temp: temp,
     hum: hum,
+    pressure: pressure,
     staff: staff,
     status: compliant ? "COMPLIANT" : "NON-COMPLIANT",
     compliant: compliant,
@@ -1016,12 +1042,15 @@ function recordData(area) {
   
   const reportContent = generateAreaReport(area, data);
   
-  // Download PDF report
-  downloadFile(fileName, reportContent);
+  // Upload to Google Drive
+  const uploaded = await uploadToGoogleDrive(fileName, reportContent, 'text/html');
   
   // Clear form and checkboxes
   document.getElementById(`temp${area}`).value = '';
   document.getElementById(`hum${area}`).value = '';
+  if (area === '797' || area === '800') {
+    document.getElementById(`pressure${area}`).value = '';
+  }
   document.getElementById(`staff${area}`).value = '';
   clearCleaningCheckboxes(area);
   
@@ -1029,30 +1058,83 @@ function recordData(area) {
   loadData();
   
   // Show result
-  const cleaningInfo = cleaningTasks.length > 0 ? `\nCleaning tasks completed: ${cleaningTasks.join(', ')}` : '';
-  
-  if (!compliant) {
-    alert(`⚠️ NON-COMPLIANT READING RECORDED!\n\nRequired: 68-77°F, ≤60% RH\nRecorded: ${temp}°F, ${hum}% RH${cleaningInfo}\n\nPDF report downloaded: ${fileName}\n\nCORRECTIVE ACTION REQUIRED`);
+  if (uploaded) {
+    const uploadMethod = google_apis_available && access_token ? 'Google Drive' : 'local download';
+    const cleaningInfo = cleaningTasks.length > 0 ? `\nCleaning tasks completed: ${cleaningTasks.join(', ')}` : '';
+    const pressureInfo = pressure !== null ? `, Pressure: ${pressure}" WC` : '';
+    
+    if (!compliant) {
+      let requirements = '68-77°F, ≤60% RH';
+      if (area === '797') requirements += ', +0.01 to +0.05" WC';
+      if (area === '800') requirements += ', -0.01 to -0.05" WC';
+      
+      alert(`⚠️ NON-COMPLIANT READING RECORDED!\n\nRequired: ${requirements}\nRecorded: ${temp}°F, ${hum}% RH${pressureInfo}${cleaningInfo}\n\nPDF report saved via: ${uploadMethod}\nFile: ${fileName}\n\nCORRECTIVE ACTION REQUIRED`);
+    } else {
+      alert(`✅ Compliant reading recorded!\nRecorded: ${temp}°F, ${hum}% RH${pressureInfo}${cleaningInfo}\n\nPDF report saved via: ${uploadMethod}\nFile: ${fileName}`);
+    }
   } else {
-    alert(`✅ Compliant reading recorded!${cleaningInfo}\n\nPDF report downloaded: ${fileName}`);
+    alert("❌ Failed to save data. Please try again.");
   }
 }
 
 // Load data into tables
 function loadData() {
-  // Update history sections if they're currently open
-  ['795', '797', '800'].forEach(area => {
-    const historyContent = document.getElementById(`history${area}`);
-    if (historyContent && historyContent.classList.contains('show')) {
-      loadHistoryData(area);
-    }
+  loadTable('795', data795);
+  loadTable('797', data797);
+  loadTable('800', data800);
+}
+
+function loadTable(area, data) {
+  const table = document.getElementById(`table${area}`);
+  table.innerHTML = '';
+  
+  data.slice(-10).forEach(entry => {
+    const row = table.insertRow();
+    row.className = entry.compliant ? '' : 'out';
+    row.innerHTML = `
+      <td>${entry.timestamp}</td>
+      <td>${entry.temp}</td>
+      <td>${entry.hum}</td>
+      <td>${entry.staff}</td>
+      <td>${entry.status}</td>
+    `;
   });
 }
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
   checkLogin();
+  
+  // Initialize Google Drive status
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_API_KEY) {
+    updateDriveStatus('error', 'Google Drive Not Configured', 
+      'To enable Google Drive uploads, you need to:\n' +
+      '1. Create a Google Cloud Console project\n' +
+      '2. Enable the Google Drive API\n' +
+      '3. Create OAuth2 credentials\n' +
+      '4. Add your Client ID and API Key to this file\n' +
+      'Files will download locally until configured.'
+    );
+  }
+  
+  // Load Google APIs safely
+  setTimeout(() => {
+    try {
+      if (typeof gapi !== 'undefined' && GOOGLE_API_KEY) {
+        gapiLoaded();
+      }
+      if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID) {
+        gisLoaded();
+      }
+    } catch (error) {
+      console.error('Error loading Google APIs:', error);
+    }
+  }, 1000);
 });
+
+// Load Google APIs when they become available
+window.gapiLoaded = gapiLoaded;
+window.gisLoaded = gisLoaded;
 </script>
 
 </body>

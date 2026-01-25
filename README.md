@@ -28,19 +28,14 @@ A comprehensive web-based application for tracking environmental compliance in p
 - Compliance statistics dashboard
 - Exportable data formats
 
-## File Versions
+## Application
 
 ### `Pharmacy_Compliance_GoogleDrive.html`
 - **Google Drive Integration** - Direct uploads to specified folder
 - **OAuth2 Authentication** - Secure Google Drive access
 - **Cloud Storage** - Automatic backup to Google Drive
-- **Setup Required** - Needs Google Cloud Console configuration
-
-### `Pharmacy_Compliance_Stable.html`
-- **Local File Downloads** - No external dependencies
-- **Immediate Use** - Works out of the box
-- **Offline Capable** - No internet connection required
-- **Browser Downloads** - Files save to default download folder
+- **Fallback Mode** - Downloads locally if Google Drive not configured
+- **Setup Instructions** - Includes Google Cloud Console configuration guide
 
 ## Login Credentials
 
@@ -65,21 +60,36 @@ A comprehensive web-based application for tracking environmental compliance in p
 ## Usage Instructions
 
 1. **Login** with provided credentials
-2. **Select appropriate compounding area** tab
-3. **Enter environmental readings** (temperature, humidity, pressure)
-4. **Complete cleaning task checklist** as applicable
-5. **Enter staff initials** for accountability
-6. **Click "Get Report"** to record data and generate compliance report
-7. **Access complete history** via collapsible history sections
+2. **Connect to Google Drive** (optional - will download locally if not configured)
+3. **Select appropriate compounding area** tab
+4. **Enter environmental readings** (temperature, humidity, pressure)
+5. **Complete cleaning task checklist** as applicable
+6. **Enter staff initials** for accountability
+7. **Click "Get Report"** to record data and generate compliance report
+8. **Access complete history** via collapsible history sections
+
+## Google Drive Setup (Optional)
+
+The application works without Google Drive setup but will download files locally instead. To enable Google Drive integration:
+
+1. Create Google Cloud Console project
+2. Enable Google Drive API
+3. Create OAuth2 credentials
+4. Replace placeholder values in HTML file
+5. Configure authorized domains
+
+See the application's built-in setup instructions for detailed steps.
 
 ## Technical Features
 
 - **Responsive Design** - Works on desktop, tablet, and mobile
 - **Local Storage** - Data persists between sessions
+- **Google Drive Integration** - Cloud backup and report storage
 - **Error Handling** - Robust error management and user feedback
 - **Professional UI** - Clean, intuitive interface design
 - **Compliance Validation** - Real-time USP standard checking
-- **Export Capabilities** - PDF reports and CSV data export
+- **PDF Reports** - Professional compliance documentation
+- **OAuth2 Security** - Secure Google Drive authentication
 
 ## Browser Compatibility
 
@@ -88,24 +98,14 @@ A comprehensive web-based application for tracking environmental compliance in p
 - Safari
 - Edge
 
-## Setup for Google Drive Version
-
-1. Create Google Cloud Console project
-2. Enable Google Drive API
-3. Create OAuth2 credentials
-4. Replace placeholder values in HTML file
-5. Configure authorized domains
-
 ## Data Security
 
-- Local browser storage only
-- No external data transmission (stable version)
-- Secure OAuth2 authentication (Google Drive version)
+- Local browser storage for session data
+- Secure OAuth2 authentication for Google Drive
 - Session-based access control
+- Optional cloud backup with user consent
 
 ## Regulatory Compliance
-
-This application is designed to support compliance with:
 - USP Chapter 795 (Non-Sterile Compounding)
 - USP Chapter 797 (Sterile Compounding)  
 - USP Chapter 800 (Hazardous Drug Compounding)
