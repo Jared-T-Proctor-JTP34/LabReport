@@ -323,14 +323,17 @@ th {
 <!-- System Status with Enhanced Status Symbol -->
 <div id="systemStatus" class="system-status">
   <div style="display:flex;align-items:center;gap:10px;">
-    <div id="statusSymbol" style="font-size:24px;">🔄</div>
+    <div id="statusSymbol" style="font-size:24px;cursor:pointer;" title="Click for Google Drive authentication">🔄</div>
     <div>
       <strong>System Status:</strong> <span id="systemStatusText">Initializing...</span>
-      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to backend services...</div>
+      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to services...</div>
     </div>
   </div>
   <div style="font-size:11px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.3);border-radius:4px;">
-    <strong>📋 Auto-Export:</strong> All compliance reports automatically save to Google Drive in the background
+    <strong>📋 Auto-Export:</strong> Reports automatically save to Google Drive or download locally based on available services
+    <div style="margin-top:4px;opacity:0.8;">
+      <strong>🌍 Environment:</strong> <span id="environmentInfo">Detecting...</span>
+    </div>
   </div>
 </div>
 
@@ -503,10 +506,25 @@ th {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
+// Environment Detection and Configuration
+const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const isGitHubPages = location.hostname.includes('github.io') || location.hostname === 'labreporttool.xyz';
+const isDevelopment = isLocalhost;
+const isProduction = isGitHubPages;
+
 // Configuration
 const CONFIG = {
-  BACKEND_URL: 'http://localhost:8001',
+  // Dynamic backend URL based on environment
+  BACKEND_URL: isDevelopment ? 'http://localhost:8001' : 'https://api.labreporttool.xyz',
+  
+  // Google API Configuration for GitHub Pages
+  GOOGLE_API_KEY: 'AIzaSyCL9IVXR7NdT3Iif7Do5YTgVD-l_GCpzYk',
+  GOOGLE_CLIENT_ID: '465131191592-kkd73c4d57upufd13njhoue4f4p1ggo2.apps.googleusercontent.com',
   TARGET_FOLDER_ID: '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc',
+  
+  // Environment info
+  ENVIRONMENT: isDevelopment ? 'development' : 'production',
+  
   CREDENTIALS: {
     "admin": "pharmacy123",
     "pharmacist": "compound456", 
@@ -532,7 +550,10 @@ const CONFIG = {
 // State
 const state = {
   backend_available: false,
+  google_api_loaded: false,
+  google_authenticated: false,
   system_initialized: false,
+  environment: CONFIG.ENVIRONMENT,
   data795: JSON.parse(localStorage.getItem("data795") || "[]"),
   data797: JSON.parse(localStorage.getItem("data797") || "[]"),
   data800: JSON.parse(localStorage.getItem("data800") || "[]")
@@ -544,14 +565,131 @@ async function checkBackendStatus() {
     const response = await fetch(`${CONFIG.BACKEND_URL}/status`);
     if (response.ok) {
       state.backend_available = true;
-      updateSystemStatus('connected', 'Backend Service Connected', 'Google Drive integration ready - reports will auto-upload');
+      updateSystemStatus('connected', 'Backend Service Connected', `Google Drive integration ready - reports will auto-upload (${CONFIG.ENVIRONMENT})`);
       return true;
     }
     throw new Error('Backend service not responding');
   } catch (error) {
     state.backend_available = false;
-    updateSystemStatus('warning', 'Backend Service Offline', 'Reports will download locally until backend service is started');
-    console.log('Backend service not available:', error.message);
+    
+    // Different behavior based on environment
+    if (isDevelopment) {
+      updateSystemStatus('warning', 'Backend Service Offline', 'Reports will download locally until backend service is started');
+      console.log('Backend service not available:', error.message);
+    } else {
+      // On GitHub Pages, try to initialize Google API directly
+      await initializeGoogleAPI();
+    }
+    return false;
+  }
+}
+
+// Google API Direct Integration (for GitHub Pages)
+async function initializeGoogleAPI() {
+  if (!isProduction) return false;
+  
+  try {
+    // Load Google API
+    if (!window.gapi) {
+      await loadGoogleAPI();
+    }
+    
+    // Initialize Google API
+    await new Promise((resolve, reject) => {
+      gapi.load('client:auth2', {
+        callback: resolve,
+        onerror: reject
+      });
+    });
+    
+    // Initialize the client
+    await gapi.client.init({
+      apiKey: CONFIG.GOOGLE_API_KEY,
+      clientId: CONFIG.GOOGLE_CLIENT_ID,
+      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+      scope: 'https://www.googleapis.com/auth/drive.file'
+    });
+    
+    state.google_api_loaded = true;
+    
+    // Check if user is already signed in
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (authInstance.isSignedIn.get()) {
+      state.google_authenticated = true;
+      updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
+    } else {
+      updateSystemStatus('warning', 'Google Drive Authentication Required', 'Click to authenticate with Google Drive for automatic uploads');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Google API initialization failed:', error);
+    updateSystemStatus('error', 'Google API Failed', 'Reports will download locally - check console for details');
+    return false;
+  }
+}
+
+// Load Google API script
+function loadGoogleAPI() {
+  return new Promise((resolve, reject) => {
+    if (window.gapi) {
+      resolve();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+// Google Drive upload using direct API
+async function uploadToGoogleDrive(fileName, content) {
+  if (!state.google_api_loaded || !state.google_authenticated) {
+    throw new Error('Google API not ready');
+  }
+  
+  const metadata = {
+    name: fileName,
+    parents: [CONFIG.TARGET_FOLDER_ID]
+  };
+  
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+  form.append('file', content);
+  
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method: 'POST',
+    headers: new Headers({
+      'Authorization': `Bearer ${gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`
+    }),
+    body: form
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+  
+  return await response.json();
+}
+
+// Authenticate with Google (for GitHub Pages)
+async function authenticateGoogle() {
+  if (!state.google_api_loaded) {
+    await initializeGoogleAPI();
+  }
+  
+  try {
+    const authInstance = gapi.auth2.getAuthInstance();
+    await authInstance.signIn();
+    state.google_authenticated = true;
+    updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
+    return true;
+  } catch (error) {
+    console.error('Google authentication failed:', error);
+    updateSystemStatus('error', 'Authentication Failed', 'Could not connect to Google Drive - reports will download locally');
     return false;
   }
 }
@@ -573,18 +711,28 @@ function updateSystemStatus(status, text, details) {
       case 'connected':
         statusSymbol.textContent = '✅';
         statusSymbol.title = 'Google Drive API Connected - Ready to upload reports';
+        // Make status clickable for re-authentication if needed
+        if (isProduction && !state.google_authenticated) {
+          statusSymbol.style.cursor = 'pointer';
+          statusSymbol.onclick = authenticateGoogle;
+        }
         break;
       case 'warning':
         statusSymbol.textContent = '⚠️';
-        statusSymbol.title = 'Backend service offline - Files will download locally';
+        statusSymbol.title = isProduction ? 'Click to authenticate with Google Drive' : 'Backend service offline - Files will download locally';
+        // Make clickable on GitHub Pages for authentication
+        if (isProduction) {
+          statusSymbol.style.cursor = 'pointer';
+          statusSymbol.onclick = authenticateGoogle;
+        }
         break;
       case 'error':
         statusSymbol.textContent = '❌';
-        statusSymbol.title = 'Connection error - Check backend service';
+        statusSymbol.title = 'Connection error - Check backend service or Google API';
         break;
       case 'info':
         statusSymbol.textContent = '🔄';
-        statusSymbol.title = 'Connecting to backend service...';
+        statusSymbol.title = 'Connecting to services...';
         break;
       default:
         statusSymbol.textContent = '🔄';
@@ -594,42 +742,61 @@ function updateSystemStatus(status, text, details) {
 }
 
 async function uploadToBackend(fileName, content, contentType = 'application/pdf') {
-  if (!state.backend_available) {
-    downloadFile(fileName, content);
-    return true;
+  // Try backend service first (for local development)
+  if (state.backend_available) {
+    try {
+      let fileContent = content;
+      let encoding = 'text';
+      
+      if (content instanceof Blob) {
+        const arrayBuffer = await content.arrayBuffer();
+        fileContent = btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+        encoding = 'base64';
+      }
+      
+      const response = await fetch(`${CONFIG.BACKEND_URL}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: fileName,
+          content: fileContent,
+          content_type: contentType,
+          encoding: encoding
+        })
+      });
+      
+      if (response.ok) {
+        console.log('File uploaded via backend service');
+        return true;
+      }
+      throw new Error('Backend upload failed');
+    } catch (error) {
+      console.error('Backend upload error:', error);
+    }
   }
   
-  try {
-    let fileContent = content;
-    let encoding = 'text';
-    
-    if (content instanceof Blob) {
-      const arrayBuffer = await content.arrayBuffer();
-      fileContent = btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
-      encoding = 'base64';
-    }
-    
-    const response = await fetch(`${CONFIG.BACKEND_URL}/upload`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: fileName,
-        content: fileContent,
-        content_type: contentType,
-        encoding: encoding
-      })
-    });
-    
-    if (response.ok) {
-      console.log('File uploaded successfully');
+  // Try Google Drive direct API (for GitHub Pages)
+  if (isProduction && state.google_api_loaded) {
+    try {
+      if (!state.google_authenticated) {
+        // Try to authenticate
+        const authenticated = await authenticateGoogle();
+        if (!authenticated) {
+          throw new Error('Authentication required');
+        }
+      }
+      
+      await uploadToGoogleDrive(fileName, content);
+      console.log('File uploaded via Google Drive API');
       return true;
+    } catch (error) {
+      console.error('Google Drive upload error:', error);
     }
-    throw new Error('Upload failed');
-  } catch (error) {
-    console.error('Upload error:', error);
-    downloadFile(fileName, content);
-    return true;
   }
+  
+  // Fallback: Download locally
+  downloadFile(fileName, content);
+  return true;
 }
 
 // Fallback: Download file locally
@@ -906,7 +1073,15 @@ async function recordData(area) {
   loadData();
   
   // Show result
-  const uploadMethod = state.backend_available ? 'Google Drive (via backend)' : 'local download';
+  let uploadMethod;
+  if (state.backend_available) {
+    uploadMethod = 'Google Drive (via backend service)';
+  } else if (isProduction && state.google_authenticated) {
+    uploadMethod = 'Google Drive (direct API)';
+  } else {
+    uploadMethod = 'local download';
+  }
+  
   const cleaningInfo = entry.cleaningTasks.length > 0 ? `\nCleaning: ${entry.cleaningTasks.join(', ')}` : '';
   const pressureInfo = pressure !== null ? `, Pressure: ${pressure}" WC` : '';
   
@@ -995,7 +1170,20 @@ function loadData() {
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
   checkLogin();
-  updateSystemStatus('info', 'Checking Backend Service...', 'Testing connection to Google Drive backend...');
+  
+  // Update environment info display
+  const envInfo = document.getElementById('environmentInfo');
+  if (envInfo) {
+    envInfo.textContent = `${CONFIG.ENVIRONMENT} (${location.hostname})`;
+  }
+  
+  // Show environment info in console
+  console.log(`🌍 Environment: ${CONFIG.ENVIRONMENT}`);
+  console.log(`🔗 Backend URL: ${CONFIG.BACKEND_URL}`);
+  console.log(`📍 Domain: ${location.hostname}`);
+  
+  updateSystemStatus('info', 'Initializing System...', `Checking ${CONFIG.ENVIRONMENT} services...`);
+  
   setTimeout(async () => {
     await checkBackendStatus();
     state.system_initialized = true;

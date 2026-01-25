@@ -38,22 +38,32 @@ This system provides real-time monitoring and documentation of pharmacy compound
 - Local browser storage with export capabilities
 
 ### ☁️ **Google Drive Integration**
-- **Backend Service**: No user authentication required - all uploads handled server-side
-- Automatic PDF uploads to designated Google Drive folder
-- Fallback to local download if service unavailable
-- Clean status indicator shows connection status
+- **Dual Integration**: Backend service (local) + Direct Google API (GitHub Pages)
+- **Environment Detection**: Automatically uses appropriate integration method
+- **Smart Authentication**: Click-to-authenticate on GitHub Pages
+- **Automatic PDF uploads** to designated Google Drive folder
+- **Fallback to local download** if no service available
+- **Enhanced status indicators** show connection status with tooltips
 
 ## 🏗️ Architecture
 
 ### **Frontend Application**
-- `Pharmacy_Compliance_Backend.html` - Main application with backend service integration
+- `Pharmacy_Compliance_Backend.html` - Main application with dual integration support
 - `index.html` - Entry point that redirects to the main application
+- **Environment Detection**: Automatically detects local vs GitHub Pages deployment
+- **Dual Integration**: Backend service for local + Direct Google API for GitHub Pages
 
-### **Backend Service**
+### **Backend Service** (Local Development)
 - `google_drive_backend.py` - Python backend for Google Drive uploads
 - Handles authentication and file uploads server-side
 - CORS-enabled for frontend integration
 - Automatic local backup if Google Drive unavailable
+
+### **GitHub Pages Integration** (Production)
+- Direct Google API integration using OAuth2
+- Click-to-authenticate user flow
+- Automatic deployment via GitHub Actions
+- Custom domain support (labreporttool.xyz)
 
 ### **Development Tools**
 - Local HTTPS server setup for testing Google APIs
@@ -63,6 +73,13 @@ This system provides real-time monitoring and documentation of pharmacy compound
 
 ## 🚀 Quick Start
 
+### **GitHub Pages (Production)**
+1. **Visit**: https://labreporttool.xyz or https://jared-t-proctor-jtp34.github.io/LabReport/
+2. **Authenticate**: Click the status symbol (⚠️) to connect to Google Drive
+3. **Login**: Use demo credentials below
+4. **Start monitoring**: Records automatically upload to Google Drive
+
+### **Local Development**
 1. **Start the backend service**:
    ```bash
    cd Labreports
@@ -176,17 +193,25 @@ python3 test_backend.py
 
 ## 🌐 Deployment
 
-### **Production Deployment**
-1. Deploy to `labreporttool.xyz` domain
-2. Configure DNS settings (included in repository)
-3. Set up Google Cloud Console for production domain
-4. Deploy backend service to cloud provider
+### **Production Deployment** (GitHub Pages)
+1. **Automatic Deployment**: GitHub Actions deploys on every push to main
+2. **Live URL**: https://labreporttool.xyz
+3. **GitHub Pages URL**: https://jared-t-proctor-jtp34.github.io/LabReport/
+4. **Google API Integration**: Direct OAuth2 authentication
+5. **Custom Domain**: Configured with DNS A records
+
+### **Local Development**
+1. **Backend Service**: Run `python3 google_drive_backend.py`
+2. **Local URL**: Open `Pharmacy_Compliance_Backend.html` in browser
+3. **Google Integration**: Via backend service (no user authentication)
+4. **Testing Tools**: Comprehensive suite for development
 
 ### **Security Considerations**
-- HTTPS required for Google API integration
-- Secure credential management
-- CORS configuration for cross-origin requests
-- Session management and automatic logout
+- **HTTPS Required**: Google API integration requires secure connections
+- **Domain Authorization**: Google Cloud Console configured for authorized domains
+- **Secure Credential Management**: API keys and client IDs properly configured
+- **CORS Configuration**: Cross-origin requests properly handled
+- **Session Management**: Automatic logout and secure login flow
 
 ## 📞 Support & Documentation
 
@@ -205,19 +230,23 @@ python3 test_backend.py
 - **Scalable**: Easy to deploy and maintain across multiple locations
 - **No Authentication Required**: Backend service option eliminates user authentication complexity
 
-## 🔄 Recent Updates (v2.1)
+## 🔄 Recent Updates (v2.2)
 
-- ✅ Simplified to single backend-only version
-- ✅ Enhanced status symbol showing Google Drive connection status
-- ✅ Removed OAuth complexity - all authentication handled server-side
-- ✅ Clean, professional status indicator (✅ connected, ⚠️ offline, ❌ error)
-- ✅ Streamlined documentation and file structure
-- ✅ Improved user experience with clear visual feedback
+- ✅ **GitHub Pages Integration**: Direct Google API support for production deployment
+- ✅ **Environment Detection**: Automatically detects local vs GitHub Pages deployment
+- ✅ **Dual Integration**: Backend service (local) + Direct Google API (GitHub Pages)
+- ✅ **Click Authentication**: Simple click-to-authenticate flow on GitHub Pages
+- ✅ **Enhanced Status Indicators**: Clear visual feedback with tooltips and click actions
+- ✅ **GitHub Actions Deployment**: Automatic deployment to GitHub Pages
+- ✅ **Custom Domain Support**: Full integration with labreporttool.xyz
+- ✅ **Smart Fallbacks**: Downloads locally if no service available
+- ✅ **Professional Deployment**: Ready for production use with full Google Drive integration
 
 ---
 
-**Version**: 2.1  
+**Version**: 2.2  
 **Last Updated**: January 2026  
 **License**: MIT  
-**Domain**: https://labreporttool.xyz  
+**Production URL**: https://labreporttool.xyz  
+**GitHub Pages**: https://jared-t-proctor-jtp34.github.io/LabReport/  
 **Repository**: https://github.com/Jared-T-Proctor-JTP34/LabReport
