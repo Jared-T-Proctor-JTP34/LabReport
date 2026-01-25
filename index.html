@@ -1,18 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pharmacy Compounding Compliance Log</title>
-    <script>
-        // Redirect directly to the application
-        window.location.href = 'Pharmacy_Compliance_Backend.html';
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmacy Compounding Compliance Log - Professional USP Monitoring System</title>
+
+<!-- Favicon -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Professional pharmacy compounding compliance monitoring system for USP 795, 797, and 800 standards. Track temperature, humidity, air pressure, and generate regulatory reports.">
+<meta name="keywords" content="pharmacy, compounding, USP compliance, 795, 797, 800, temperature monitoring, regulatory compliance">
+
+<style>
+body { 
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+  margin: 0; 
+  padding: 0; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  background: rgba(255,255,255,0.95);
+  padding: 40px 0;
+  text-align: center;
+  margin-bottom: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  color: #2c3e50;
+  font-size: 2.5em;
+  margin: 0 0 10px 0;
+  font-weight: 700;
+}
+
+.header .subtitle {
+  color: #7f8c8d;
+  font-size: 1.2em;
+  margin: 0;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: rgba(255,255,255,0.95);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+  color: #2c3e50;
+  margin-top: 0;
+  font-size: 1.5em;
+}
+
+.features {
+  background: rgba(255,255,255,0.95);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+
+.features h2 {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.feature-item {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.cta-section {
+  background: rgba(255,255,255,0.95);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.cta-button {
+  display: inline-block;
+  background: #3498db;
+  color: white;
+  padding: 15px 30px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1em;
+  margin: 10px;
+  transition: background 0.3s;
+}
+
+.cta-button:hover {
+  background: #2980b9;
+}
+
+.footer {
+  background: rgba(255,255,255,0.95);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.footer-links {
+  margin: 20px 0;
+}
+
+.footer-links a {
+  color: #3498db;
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: 500;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .header h1 {
+    font-size: 2em;
+  }
+  
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 </head>
+
 <body>
-    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-        <h2>Redirecting to Pharmacy Compliance Application...</h2>
-        <p>If you are not redirected automatically, <a href="Pharmacy_Compliance_Backend.html">click here</a>.</p>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>🧪 Pharmacy Compounding Compliance Log</h1>
+    <p class="subtitle">Professional USP Standards Monitoring System</p>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- App Purpose -->
+    <div class="card">
+      <h2>📋 Application Purpose</h2>
+      <p>The Pharmacy Compounding Compliance Log is a professional monitoring system designed to help pharmacy professionals ensure compliance with USP (United States Pharmacopeia) standards for compounding operations.</p>
+      
+      <p><strong>Regulatory Areas Covered:</strong></p>
+      <ul>
+        <li><strong>USP 795:</strong> Non-sterile compounding areas</li>
+        <li><strong>USP 797:</strong> Sterile compounding areas</li>
+        <li><strong>USP 800:</strong> Hazardous drug compounding areas</li>
+      </ul>
+      
+      <p>The system tracks critical environmental parameters including temperature, humidity, air pressure, and cleaning task completion to ensure regulatory compliance and patient safety.</p>
     </div>
+
+    <!-- How It Works -->
+    <div class="card">
+      <h2>⚙️ How It Works</h2>
+      <p><strong>Real-time Monitoring:</strong> Track environmental conditions in real-time with instant compliance validation against USP standards.</p>
+      
+      <p><strong>Automated Reporting:</strong> Generate professional PDF compliance reports automatically with proper formatting for regulatory review.</p>
+      
+      <p><strong>Secure Storage:</strong> Reports are securely uploaded to Google Drive for easy access, backup, and regulatory documentation.</p>
+      
+      <p><strong>Role-based Access:</strong> Different access levels for administrators, pharmacists, and technicians ensure proper oversight and accountability.</p>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="features">
+    <h2>🌟 Key Features</h2>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h3>📊 Real-time Compliance Monitoring</h3>
+        <p>Instant validation against USP temperature, humidity, and pressure requirements with visual compliance indicators.</p>
+      </div>
+      
+      <div class="feature-item">
+        <h3>📋 Automated PDF Reports</h3>
+        <p>Professional compliance reports generated automatically with area-specific branding and regulatory formatting.</p>
+      </div>
+      
+      <div class="feature-item">
+        <h3>☁️ Google Drive Integration</h3>
+        <p>Secure cloud storage of compliance reports with automatic file naming and organization for easy regulatory review.</p>
+      </div>
+      
+      <div class="feature-item">
+        <h3>🧽 Cleaning Task Management</h3>
+        <p>Daily cleaning task tracking with verification checkboxes for surface, floor, equipment, and hood cleaning.</p>
+      </div>
+      
+      <div class="feature-item">
+        <h3>📈 Historical Data Analysis</h3>
+        <p>Complete monitoring history with compliance statistics, trend analysis, and expandable data tables.</p>
+      </div>
+      
+      <div class="feature-item">
+        <h3>🔐 Secure Access Control</h3>
+        <p>Role-based authentication system with different permission levels for administrators, pharmacists, and technicians.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call to Action -->
+  <div class="cta-section">
+    <h2>🚀 Access the Compliance System</h2>
+    <p>Ready to streamline your pharmacy compliance monitoring? Access the professional compliance system with secure Google Drive integration.</p>
+    
+    <a href="Pharmacy_Compliance_Backend.html" class="cta-button">🔐 Login to Compliance System</a>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 6px; display: inline-block;">
+      <p style="margin: 0; font-size: 14px; color: #2c5282;">
+        <strong>🔑 Demo Access Available:</strong><br>
+        Test the system with provided demo credentials for administrators, pharmacists, and technicians.
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-links">
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <a href="terms-of-service.html">Terms of Service</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://github.com/Jared-T-Proctor-JTP34/LabReport">Source Code</a>
+    </div>
+    
+    <p style="margin: 10px 0; color: #7f8c8d; font-size: 14px;">
+      🏥 Professional pharmacy compliance monitoring system<br>
+      📊 USP 795, 797, 800 standards compliance<br>
+      🔒 Secure Google Drive integration for regulatory documentation
+    </p>
+    
+    <p style="margin: 0; color: #95a5a6; font-size: 12px;">
+      © 2026 Pharmacy Compounding Compliance Log. Professional regulatory compliance monitoring.
+    </p>
+  </div>
+</div>
 </body>
 </html>
