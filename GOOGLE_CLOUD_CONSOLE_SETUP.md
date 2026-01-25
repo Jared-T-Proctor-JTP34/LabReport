@@ -1,10 +1,18 @@
 # 🔧 Google Cloud Console Setup - COMPLETE GUIDE
 
-## 🚨 **CRITICAL: OAuth Consent Screen Required**
+## 🚨 **DOMAIN VERIFICATION REQUIRED**
 
-The error `idpiframe_initialization_failed` means your Google Cloud Console project needs an **OAuth consent screen** configured. This is MANDATORY for new applications using Google Identity Services.
+Google is requiring domain ownership verification for `labreporttool.xyz`. You have two options:
 
-## 🛠️ **Complete Setup Process:**
+### **🚀 OPTION 1: Quick Setup (GitHub Pages) - RECOMMENDED**
+Use GitHub Pages URLs for immediate functionality. See `QUICK_OAUTH_SETUP.md` for step-by-step instructions.
+
+### **🏠 OPTION 2: Complete Domain Verification**
+Verify ownership of `labreporttool.xyz` first. See `DOMAIN_VERIFICATION_GUIDE.md` for detailed instructions.
+
+---
+
+## 🛠️ **QUICK SETUP: OAuth Consent Screen Configuration**
 
 ### **Step 1: Configure OAuth Consent Screen (REQUIRED)**
 
@@ -15,7 +23,7 @@ The error `idpiframe_initialization_failed` means your Google Cloud Console proj
    - Select **"External"** (for public use)
    - Click **"Create"**
 
-4. **Fill Required Fields**:
+4. **Fill Required Fields** (Use GitHub Pages URLs for immediate setup):
    ```
    App name: Pharmacy Compounding Compliance Log
    User support email: [your email address]
@@ -23,19 +31,19 @@ The error `idpiframe_initialization_failed` means your Google Cloud Console proj
    
    App description: Professional USP compliance monitoring system for pharmacy compounding operations. Tracks temperature, humidity, air pressure, and cleaning tasks for USP 795, 797, and 800 areas. Generates PDF compliance reports and uploads them to Google Drive for secure regulatory documentation. No personal health information is collected.
    
-   App domain: labreporttool.xyz
-   Privacy Policy URL: https://labreporttool.xyz (optional)
-   Terms of Service URL: https://labreporttool.xyz (optional)
+   App domain: jared-t-proctor-jtp34.github.io
+   Privacy Policy URL: https://jared-t-proctor-jtp34.github.io/LabReport/privacy-policy.html
+   Terms of Service URL: https://jared-t-proctor-jtp34.github.io/LabReport/terms-of-service.html
    ```
 
 5. **Add Authorized Domains**:
    ```
-   labreporttool.xyz
+   jared-t-proctor-jtp34.github.io
    github.io
    ```
 
 6. **Click "Save and Continue"** through all steps
-7. **Publish the app** (click "Publish App" button)
+7. **🚨 CRITICAL: Click "Publish App"** (not testing mode)
 
 ### **Step 2: Configure OAuth 2.0 Client ID**
 
