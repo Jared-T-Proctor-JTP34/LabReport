@@ -1,73 +1,166 @@
-# 🔧 Google Cloud Console Setup - REQUIRED
+# 🔧 Google Cloud Console Setup - COMPLETE GUIDE
 
-## 🚨 **Critical Issue**: Domain Authorization
+## 🚨 **CRITICAL: OAuth Consent Screen Required**
 
-The error shows that your domain `labreporttool.xyz` is not authorized in Google Cloud Console. This MUST be fixed for Google Drive integration to work.
+The error `idpiframe_initialization_failed` means your Google Cloud Console project needs an **OAuth consent screen** configured. This is MANDATORY for new applications using Google Identity Services.
 
-## 🛠️ **Step-by-Step Fix:**
+## 🛠️ **Complete Setup Process:**
 
-### **Step 1: Go to Google Cloud Console**
-1. **Visit**: https://console.cloud.google.com/apis/credentials
-2. **Sign in** with your Google account
+### **Step 1: Configure OAuth Consent Screen (REQUIRED)**
 
-### **Step 2: Find Your OAuth 2.0 Client ID**
-1. **Look for**: `465131191592-kkd73c4d57upufd13njhoue4f4p1ggo2.apps.googleusercontent.com`
-2. **Click the pencil icon** to edit it
+1. **Go to Google Cloud Console**: https://console.cloud.google.com/
+2. **Navigate to**: APIs & Services → **OAuth consent screen**
+   - **Alternative**: Use this direct link: https://console.cloud.google.com/apis/credentials/consent
+3. **Choose User Type**: 
+   - Select **"External"** (for public use)
+   - Click **"Create"**
 
-### **Step 3: Add Authorized JavaScript Origins**
-In the "Authorized JavaScript origins" section, add these EXACT URLs:
-```
-https://labreporttool.xyz
-https://www.labreporttool.xyz
-https://jared-t-proctor-jtp34.github.io
-```
+4. **Fill Required Fields**:
+   ```
+   App name: Pharmacy Compounding Compliance Log
+   User support email: [your email address]
+   Developer contact information: [your email address]
+   
+   App description: Professional USP compliance monitoring system for pharmacy compounding operations. Tracks temperature, humidity, air pressure, and cleaning tasks for USP 795, 797, and 800 areas. Generates PDF compliance reports and uploads them to Google Drive for secure regulatory documentation. No personal health information is collected.
+   
+   App domain: labreporttool.xyz
+   Privacy Policy URL: https://labreporttool.xyz (optional)
+   Terms of Service URL: https://labreporttool.xyz (optional)
+   ```
 
-### **Step 4: Add Authorized Redirect URIs**
-In the "Authorized redirect URIs" section, add these EXACT URLs:
-```
-https://labreporttool.xyz
-https://www.labreporttool.xyz
-https://jared-t-proctor-jtp34.github.io/LabReport/
-```
+5. **Add Authorized Domains**:
+   ```
+   labreporttool.xyz
+   github.io
+   ```
 
-### **Step 5: Configure API Key**
+6. **Click "Save and Continue"** through all steps
+7. **Publish the app** (click "Publish App" button)
+
+### **Step 2: Configure OAuth 2.0 Client ID**
+
+1. **Navigate to**: APIs & Services → **Credentials**
+2. **Find your OAuth Client ID**: `465131191592-kkd73c4d57upufd13njhoue4f4p1ggo2.apps.googleusercontent.com`
+3. **Click the pencil icon** to edit
+
+4. **Add Authorized JavaScript Origins**:
+   ```
+   https://labreporttool.xyz
+   https://www.labreporttool.xyz
+   https://jared-t-proctor-jtp34.github.io
+   ```
+
+5. **Add Authorized Redirect URIs**:
+   ```
+   https://labreporttool.xyz
+   https://www.labreporttool.xyz
+   https://jared-t-proctor-jtp34.github.io/LabReport/
+   ```
+
+6. **Click "Save"**
+
+### **Step 3: Configure API Key (Optional but Recommended)**
+
 1. **Find your API Key**: `AIzaSyCL9IVXR7NdT3Iif7Do5YTgVD-l_GCpzYk`
-2. **Click the pencil icon** to edit it
+2. **Click the pencil icon** to edit
 3. **Under "Website restrictions"**, add:
    ```
    https://labreporttool.xyz/*
    https://www.labreporttool.xyz/*
    https://jared-t-proctor-jtp34.github.io/*
    ```
+4. **Click "Save"**
 
-### **Step 6: Save Changes**
-1. **Click "Save"** on both the OAuth Client and API Key
-2. **Wait 5-10 minutes** for changes to propagate
+### **Step 4: Enable Required APIs**
+
+1. **Navigate to**: APIs & Services → **Library**
+2. **Search and Enable**:
+   - ✅ Google Drive API
+   - ✅ Google Identity Services API (should be enabled by default)
 
 ## 🧪 **Test After Configuration**
 
+### **Wait for Propagation**
+- **Wait 5-10 minutes** after saving changes
+- Google's systems need time to update
+
+### **Clear Cache and Test**
 1. **Clear browser cache**: `Ctrl + F5`
 2. **Visit**: https://labreporttool.xyz
 3. **Check console** - should see:
    ```
    🌐 GitHub Pages detected - skipping backend check
-   ✅ Google API and Identity Services loaded successfully
+   � Initializing Google Identity Services for GitHub Pages...
+   ✅ Google Identity Services loaded successfully
    ⚠️ Google Drive authentication required
    ```
-4. **Click status symbol** to test authentication
 
-## ⚠️ **Common Mistakes**
+### **Test Authentication**
+1. **Click status symbol** (⚠️)
+2. **Should see**: Google consent screen with your app name
+3. **Grant permissions**: Allow access to Google Drive
+4. **Should see**: ✅ "Google Drive Connected"
 
-- **Missing https://**: Must include the protocol
-- **Wrong domain**: Must be exact match
-- **Trailing slashes**: Be consistent with the format above
-- **Case sensitivity**: Use exact capitalization
+## 📋 **OAuth Consent Screen Details**
 
-## 🎯 **Expected Result**
+### **Required Information**:
+```
+App name: Pharmacy Compounding Compliance Log
+User support email: [your email]
+Developer contact information: [your email]
+App domain: labreporttool.xyz
+Privacy Policy URL: https://labreporttool.xyz (optional)
+Terms of Service URL: https://labreporttool.xyz (optional)
+```
 
-After proper configuration:
-- ✅ No more "Not a valid origin" errors
-- ✅ Google authentication popup works
-- ✅ Files upload to Google Drive successfully
+### **Scopes** (should be automatically added):
+- `https://www.googleapis.com/auth/drive.file` - Upload files to Google Drive
 
-**This configuration is MANDATORY for the application to work on GitHub Pages!** 🚀
+### **Test Users** (if app is in testing mode):
+- Add your own email address as a test user
+
+## 🚨 **Common Issues & Solutions**
+
+### **"App not verified" warning**
+- **Normal for new apps** - users can click "Advanced" → "Go to [app name] (unsafe)"
+- **To remove warning**: Submit app for verification (optional for personal use)
+
+### **"Access blocked" error**
+- **Cause**: OAuth consent screen not published
+- **Solution**: Go back to OAuth consent screen and click "Publish App"
+
+### **"Invalid client" error**
+- **Cause**: Authorized domains not configured correctly
+- **Solution**: Double-check the exact URLs in the authorized origins
+
+## 🎯 **Expected Flow After Setup**
+
+1. **User visits**: https://labreporttool.xyz
+2. **Clicks authenticate**: Status symbol (⚠️)
+3. **Sees consent screen**: "Pharmacy Compounding Compliance Log wants to access your Google Drive"
+4. **Grants permission**: Click "Allow"
+5. **Authentication success**: ✅ "Google Drive Connected"
+6. **File uploads work**: PDFs automatically upload to Google Drive
+
+## 📞 **Verification Checklist**
+
+- [ ] OAuth consent screen configured and published
+- [ ] App name and contact information filled
+- [ ] Authorized domains added to consent screen
+- [ ] OAuth Client ID configured with authorized origins
+- [ ] API Key configured with website restrictions (optional)
+- [ ] Google Drive API enabled
+- [ ] Waited 5-10 minutes for changes to propagate
+- [ ] Browser cache cleared
+- [ ] Tested authentication flow
+
+## 🚀 **After Successful Setup**
+
+Your pharmacy compliance application will:
+- ✅ Load without deprecated API errors
+- ✅ Show proper Google consent screen
+- ✅ Successfully authenticate users
+- ✅ Upload PDF reports to Google Drive automatically
+- ✅ Work professionally at labreporttool.xyz
+
+**The OAuth consent screen is the missing piece!** Once configured, everything should work perfectly. 🎯

@@ -297,20 +297,65 @@ th {
 <body>
 
 <!-- Login Screen -->
-<div id="loginScreen" style="max-width:400px;margin:80px auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15)">
-  <h2>Compliance Log Access</h2>
-  <div style="background:#f8f9fa;padding:10px;border-radius:4px;margin:10px 0;font-size:12px;color:#666;">
-    <strong>Demo Credentials:</strong><br>
-    admin / pharmacy123<br>
-    pharmacist / compound456<br>
-    tech / sterile789
+<div id="loginScreen" style="max-width:500px;margin:60px auto;padding:30px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+  <div style="text-align:center;margin-bottom:25px;">
+    <h2 style="color:#2c3e50;margin-bottom:10px;">🧪 Pharmacy Compounding Compliance Log</h2>
+    <p style="color:#7f8c8d;font-size:14px;margin:0;">Professional USP Compliance Monitoring System</p>
   </div>
-  <label>Username</label>
-  <input type="text" id="loginUser" onkeypress="handleLoginKeyPress(event)">
-  <label>Password</label>
-  <input type="password" id="loginPass" onkeypress="handleLoginKeyPress(event)">
-  <button onclick="login()">Login</button>
-  <p id="loginError" class="alert" style="display:none">Invalid credentials</p>
+  
+  <!-- App Description for Google Compliance -->
+  <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #3498db;">
+    <h4 style="margin:0 0 10px 0;color:#2c3e50;font-size:16px;">📋 Application Purpose</h4>
+    <p style="margin:0 0 10px 0;font-size:13px;line-height:1.4;color:#495057;">
+      This application helps pharmacy professionals monitor and document compliance with USP (United States Pharmacopeia) standards for compounding areas 795, 797, and 800. It tracks temperature, humidity, air pressure, and cleaning tasks to ensure regulatory compliance.
+    </p>
+    <p style="margin:0;font-size:13px;line-height:1.4;color:#495057;">
+      <strong>Data Usage:</strong> The application generates PDF compliance reports and uploads them to your Google Drive for secure storage and regulatory documentation. No personal health information is collected or stored.
+    </p>
+  </div>
+  
+  <!-- Google Drive Integration Notice -->
+  <div style="background:#e8f5e8;padding:15px;border-radius:6px;margin:15px 0;border-left:4px solid #27ae60;">
+    <h5 style="margin:0 0 8px 0;color:#27ae60;font-size:14px;">☁️ Google Drive Integration</h5>
+    <p style="margin:0;font-size:12px;line-height:1.3;color:#2d5a2d;">
+      This application will request permission to upload compliance reports to your Google Drive. Reports are saved as PDF files with names like "Labreport - MM-DD-YYYY.pdf" for easy organization and regulatory review.
+    </p>
+  </div>
+  
+  <!-- Demo Credentials -->
+  <div style="background:#fff3cd;padding:15px;border-radius:6px;margin:15px 0;border-left:4px solid #ffc107;">
+    <h5 style="margin:0 0 8px 0;color:#856404;font-size:14px;">🔑 Demo Access Credentials</h5>
+    <div style="font-family:monospace;font-size:12px;color:#856404;">
+      <strong>Administrator:</strong> admin / pharmacy123<br>
+      <strong>Pharmacist:</strong> pharmacist / compound456<br>
+      <strong>Technician:</strong> tech / sterile789
+    </div>
+  </div>
+  
+  <!-- Login Form -->
+  <div style="margin-top:25px;">
+    <label style="font-weight:600;color:#2c3e50;">Username</label>
+    <input type="text" id="loginUser" onkeypress="handleLoginKeyPress(event)" style="margin-bottom:15px;">
+    
+    <label style="font-weight:600;color:#2c3e50;">Password</label>
+    <input type="password" id="loginPass" onkeypress="handleLoginKeyPress(event)" style="margin-bottom:20px;">
+    
+    <button onclick="login()" style="background:#3498db;padding:12px 20px;font-size:16px;font-weight:600;">
+      🚀 Access Compliance System
+    </button>
+  </div>
+  
+  <!-- Error Message -->
+  <p id="loginError" class="alert" style="display:none;margin-top:15px;padding:10px;background:#f8d7da;color:#721c24;border-radius:4px;font-size:14px;">Invalid credentials</p>
+  
+  <!-- Footer Information -->
+  <div style="margin-top:25px;padding-top:20px;border-top:1px solid #dee2e6;text-align:center;">
+    <p style="margin:0;font-size:11px;color:#6c757d;">
+      🏥 Professional pharmacy compliance monitoring<br>
+      📊 USP 795, 797, 800 standards compliance<br>
+      🔒 Secure Google Drive integration for report storage
+    </p>
+  </div>
 </div>
 
 <!-- Main App -->
