@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pharmacy Compounding Compliance Log</title>
 
+<!-- Favicon to prevent 404 error -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+
 <!--
 BACKEND INTEGRATION - NO USER AUTHENTICATION REQUIRED
 ✅ Automatic Google Drive uploads via backend service
@@ -561,9 +564,12 @@ const state = {
 
 // Backend service functions
 async function checkBackendStatus() {
+  console.log(`🔍 Environment check: isDevelopment=${isDevelopment}, isProduction=${isProduction}`);
+  console.log(`🌐 Current hostname: ${location.hostname}`);
+  
   // Skip backend check for GitHub Pages - we use direct Google API integration
   if (isProduction) {
-    console.log('🌐 GitHub Pages detected - using direct Google API integration');
+    console.log('🌐 GitHub Pages detected - skipping backend check, using direct Google API integration');
     state.backend_available = false;
     // Initialize Google API directly for GitHub Pages
     await initializeGoogleAPI();
@@ -571,41 +577,45 @@ async function checkBackendStatus() {
   }
   
   // Only try backend service for local development
+  console.log('🏠 Local development detected - checking backend service...');
   try {
+    console.log(`🔄 Attempting to connect to: ${CONFIG.BACKEND_URL}/status`);
     const response = await fetch(`${CONFIG.BACKEND_URL}/status`);
     if (response.ok) {
       state.backend_available = true;
       updateSystemStatus('connected', 'Backend Service Connected', `Google Drive integration ready - reports will auto-upload (${CONFIG.ENVIRONMENT})`);
+      console.log('✅ Backend service connected successfully');
       return true;
     }
     throw new Error('Backend service not responding');
   } catch (error) {
     state.backend_available = false;
     updateSystemStatus('warning', 'Backend Service Offline', 'Reports will download locally until backend service is started');
-    console.log('Backend service not available:', error.message);
+    console.log('⚠️ Backend service not available:', error.message);
     return false;
   }
 }
 
-// Google API Direct Integration (for GitHub Pages) - Updated to use Google Identity Services
+// Google API Direct Integration (for GitHub Pages) - Simplified approach
 async function initializeGoogleAPI() {
   if (!isProduction) return false;
   
   try {
     console.log('🔄 Initializing Google API for GitHub Pages...');
     
-    // Load Google API and Google Identity Services
-    if (!window.gapi) {
-      console.log('📥 Loading Google API script...');
-      await loadGoogleAPI();
-    }
-    
+    // Load Google Identity Services (new method)
     if (!window.google) {
       console.log('📥 Loading Google Identity Services...');
       await loadGoogleIdentityServices();
     }
     
-    // Initialize Google API client (for Drive API)
+    // Load Google API for Drive operations
+    if (!window.gapi) {
+      console.log('📥 Loading Google API script...');
+      await loadGoogleAPI();
+    }
+    
+    // Initialize Google API client (for Drive API only)
     console.log('⚙️ Initializing Google API client...');
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -624,14 +634,14 @@ async function initializeGoogleAPI() {
       });
     });
     
-    // Initialize the client
+    // Initialize the client (API key only, no auth)
     console.log('🔑 Initializing Google Drive client...');
     await gapi.client.init({
       apiKey: CONFIG.GOOGLE_API_KEY,
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
     });
     
-    // Initialize Google Identity Services
+    // Initialize Google Identity Services for authentication
     console.log('🆔 Initializing Google Identity Services...');
     window.googleTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CONFIG.GOOGLE_CLIENT_ID,
@@ -642,8 +652,17 @@ async function initializeGoogleAPI() {
           state.access_token = tokenResponse.access_token;
           updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
           console.log('✅ Google Drive authentication successful');
+          
+          // Test the connection
+          testGoogleDriveConnection().catch(error => {
+            console.warn('⚠️ Google Drive connection test failed:', error);
+          });
         }
       },
+      error_callback: (error) => {
+        console.error('❌ Google authentication error:', error);
+        updateSystemStatus('error', 'Authentication Failed', 'Google Drive authentication failed - reports will download locally');
+      }
     });
     
     state.google_api_loaded = true;
@@ -658,11 +677,11 @@ async function initializeGoogleAPI() {
     
     // Provide specific error messages
     let errorMessage = 'Google API initialization failed';
-    if (error.message.includes('Not a valid origin')) {
+    if (error.message && error.message.includes('Not a valid origin')) {
       errorMessage = 'Domain not authorized in Google Cloud Console';
-    } else if (error.message.includes('API key')) {
+    } else if (error.message && error.message.includes('API key')) {
       errorMessage = 'Google API key configuration issue';
-    } else if (error.message.includes('timeout')) {
+    } else if (error.message && error.message.includes('timeout')) {
       errorMessage = 'Google API loading timeout - check internet connection';
     }
     
@@ -1339,6 +1358,8 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(`🌍 Environment: ${CONFIG.ENVIRONMENT}`);
   console.log(`🔗 Backend URL: ${CONFIG.BACKEND_URL}`);
   console.log(`📍 Domain: ${location.hostname}`);
+  console.log(`🏠 Is Development: ${isDevelopment}`);
+  console.log(`🌐 Is Production: ${isProduction}`);
   
   updateSystemStatus('info', 'Initializing System...', `Checking ${CONFIG.ENVIRONMENT} services...`);
   
