@@ -137,15 +137,22 @@ This system provides real-time monitoring and documentation of pharmacy compound
 ## 📁 File Structure
 
 ```
-├── Pharmacy_Compliance_Backend.html      # Main application
-├── index.html                            # Entry point (redirects to main app)
-├── google_drive_backend.py               # Backend service
-├── local-https-server.py                 # Local HTTPS server
-├── test_backend.py                       # Backend testing suite
-├── GOOGLE_DRIVE_PERMANENT_SETUP.md       # Setup documentation
-├── TESTING_GUIDE.md                      # Testing instructions
-├── DNS_CONFIGURATION.md                  # Domain setup guide
-└── FOLDER_README.md                      # Folder organization guide
+Labreports/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                    # GitHub Actions deployment workflow
+├── .gitignore                           # Git ignore rules
+├── CNAME                                # Custom domain configuration (labreporttool.xyz)
+├── index.html                           # Entry point (redirects to main app)
+├── Pharmacy_Compliance_Backend.html     # Main application with dual integration
+├── google_drive_backend.py              # Backend service for local development
+├── README.md                            # Project documentation
+├── GITHUB_GOOGLE_API_SETUP.md          # Google Cloud Console setup guide
+├── TESTING_GUIDE.md                     # Testing instructions
+├── test_backend.py                      # Backend testing suite
+├── local-https-server.py                # Local HTTPS server for development
+├── cert.pem                             # SSL certificate (local development)
+└── key.pem                              # SSL private key (local development)
 ```
 
 ## 🧪 Testing
@@ -215,10 +222,9 @@ python3 test_backend.py
 
 ## 📞 Support & Documentation
 
-- **Setup Guide**: `GOOGLE_DRIVE_PERMANENT_SETUP.md`
-- **Testing Guide**: `TESTING_GUIDE.md`
-- **DNS Configuration**: `DNS_CONFIGURATION.md`
-- **Troubleshooting**: `GOOGLE_DRIVE_TROUBLESHOOTING.md`
+- **Setup Guide**: `GITHUB_GOOGLE_API_SETUP.md` - Complete Google Cloud Console configuration
+- **Testing Guide**: `TESTING_GUIDE.md` - Testing instructions for both environments
+- **GitHub Actions**: `.github/workflows/deploy.yml` - Automatic deployment configuration
 
 ## 🎉 Benefits
 
