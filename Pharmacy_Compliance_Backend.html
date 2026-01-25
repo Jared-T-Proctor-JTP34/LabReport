@@ -589,20 +589,35 @@ async function initializeGoogleAPI() {
   if (!isProduction) return false;
   
   try {
-    // Load Google API
+    console.log('🔄 Initializing Google API for GitHub Pages...');
+    
+    // Load Google API with better error handling
     if (!window.gapi) {
+      console.log('📥 Loading Google API script...');
       await loadGoogleAPI();
     }
     
-    // Initialize Google API
+    // Initialize Google API with timeout
+    console.log('⚙️ Initializing Google API client...');
     await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Google API initialization timeout'));
+      }, 10000); // 10 second timeout
+      
       gapi.load('client:auth2', {
-        callback: resolve,
-        onerror: reject
+        callback: () => {
+          clearTimeout(timeout);
+          resolve();
+        },
+        onerror: (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        }
       });
     });
     
-    // Initialize the client
+    // Initialize the client with proper error handling
+    console.log('🔑 Initializing Google Drive client...');
     await gapi.client.init({
       apiKey: CONFIG.GOOGLE_API_KEY,
       clientId: CONFIG.GOOGLE_CLIENT_ID,
@@ -611,20 +626,34 @@ async function initializeGoogleAPI() {
     });
     
     state.google_api_loaded = true;
+    console.log('✅ Google API loaded successfully');
     
     // Check if user is already signed in
     const authInstance = gapi.auth2.getAuthInstance();
-    if (authInstance.isSignedIn.get()) {
+    if (authInstance && authInstance.isSignedIn.get()) {
       state.google_authenticated = true;
       updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
+      console.log('✅ User already authenticated with Google Drive');
     } else {
       updateSystemStatus('warning', 'Google Drive Authentication Required', 'Click to authenticate with Google Drive for automatic uploads');
+      console.log('⚠️ Google Drive authentication required');
     }
     
     return true;
   } catch (error) {
-    console.error('Google API initialization failed:', error);
-    updateSystemStatus('error', 'Google API Failed', 'Reports will download locally - check console for details');
+    console.error('❌ Google API initialization failed:', error);
+    
+    // Provide specific error messages
+    let errorMessage = 'Google API initialization failed';
+    if (error.message.includes('Not a valid origin')) {
+      errorMessage = 'Domain not authorized in Google Cloud Console';
+    } else if (error.message.includes('API key')) {
+      errorMessage = 'Google API key configuration issue';
+    } else if (error.message.includes('timeout')) {
+      errorMessage = 'Google API loading timeout - check internet connection';
+    }
+    
+    updateSystemStatus('error', 'Google API Failed', `${errorMessage} - reports will download locally`);
     return false;
   }
 }
@@ -633,15 +662,35 @@ async function initializeGoogleAPI() {
 function loadGoogleAPI() {
   return new Promise((resolve, reject) => {
     if (window.gapi) {
+      console.log('✅ Google API already loaded');
       resolve();
       return;
     }
     
+    console.log('📥 Loading Google API script from CDN...');
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
-    script.onload = resolve;
-    script.onerror = reject;
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      console.log('✅ Google API script loaded successfully');
+      resolve();
+    };
+    
+    script.onerror = (error) => {
+      console.error('❌ Failed to load Google API script:', error);
+      reject(new Error('Failed to load Google API script'));
+    };
+    
     document.head.appendChild(script);
+    
+    // Timeout fallback
+    setTimeout(() => {
+      if (!window.gapi) {
+        reject(new Error('Google API script loading timeout'));
+      }
+    }, 15000); // 15 second timeout
   });
 }
 
@@ -678,19 +727,76 @@ async function uploadToGoogleDrive(fileName, content) {
 // Authenticate with Google (for GitHub Pages)
 async function authenticateGoogle() {
   if (!state.google_api_loaded) {
-    await initializeGoogleAPI();
+    console.log('🔄 Google API not loaded, initializing...');
+    const initialized = await initializeGoogleAPI();
+    if (!initialized) {
+      console.error('❌ Cannot authenticate - Google API initialization failed');
+      return false;
+    }
   }
   
   try {
+    console.log('🔑 Starting Google authentication...');
+    updateSystemStatus('info', 'Authenticating...', 'Please complete Google Drive authentication in popup window');
+    
     const authInstance = gapi.auth2.getAuthInstance();
-    await authInstance.signIn();
-    state.google_authenticated = true;
-    updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
+    if (!authInstance) {
+      throw new Error('Google Auth instance not available');
+    }
+    
+    // Sign in with popup
+    const user = await authInstance.signIn({
+      prompt: 'select_account'
+    });
+    
+    if (user && user.isSignedIn()) {
+      state.google_authenticated = true;
+      updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
+      console.log('✅ Google Drive authentication successful');
+      
+      // Test the connection
+      try {
+        await testGoogleDriveConnection();
+      } catch (testError) {
+        console.warn('⚠️ Google Drive connection test failed:', testError);
+      }
+      
+      return true;
+    } else {
+      throw new Error('Authentication failed - user not signed in');
+    }
+  } catch (error) {
+    console.error('❌ Google authentication failed:', error);
+    
+    let errorMessage = 'Authentication failed';
+    if (error.message.includes('popup')) {
+      errorMessage = 'Popup blocked - please allow popups and try again';
+    } else if (error.message.includes('access_denied')) {
+      errorMessage = 'Access denied - please grant Google Drive permissions';
+    }
+    
+    updateSystemStatus('error', 'Authentication Failed', `${errorMessage} - reports will download locally`);
+    return false;
+  }
+}
+
+// Test Google Drive connection
+async function testGoogleDriveConnection() {
+  try {
+    console.log('🧪 Testing Google Drive connection...');
+    
+    // Try to list files in the target folder (just to test connection)
+    const response = await gapi.client.drive.files.list({
+      q: `'${CONFIG.TARGET_FOLDER_ID}' in parents`,
+      pageSize: 1,
+      fields: 'files(id, name)'
+    });
+    
+    console.log('✅ Google Drive connection test successful');
     return true;
   } catch (error) {
-    console.error('Google authentication failed:', error);
-    updateSystemStatus('error', 'Authentication Failed', 'Could not connect to Google Drive - reports will download locally');
-    return false;
+    console.error('❌ Google Drive connection test failed:', error);
+    throw error;
   }
 }
 
