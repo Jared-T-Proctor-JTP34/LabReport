@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google API Configuration Checker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border-left: 5px solid #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-left: 5px solid #dc3545; }
+        .warning { background: #fff3cd; color: #856404; border-left: 5px solid #ffc107; }
+        .info { background: #d1ecf1; color: #0c5460; border-left: 5px solid #17a2b8; }
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .config-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .config-item h4 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .config-value {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: #6c757d;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .validation-result {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .valid { background: #d4edda; color: #155724; }
+        .invalid { background: #f8d7da; color: #721c24; }
+        .unknown { background: #e2e3e5; color: #6c757d; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+        .check-icon {
+            display: inline-block;
+            width: 20px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Google API Configuration Checker</h1>
+        <p>This tool verifies your Google API configuration is correct and ready for use.</p>
+        
+        <div id="overallStatus" class="status info">
+            <strong>📊 Status:</strong> Analyzing configuration...
+        </div>
+        
+        <div class="config-grid">
+            <div class="config-item">
+                <h4>🔑 Google Client ID</h4>
+                <div class="config-value" id="clientIdValue">Loading...</div>
+                <div class="validation-result unknown" id="clientIdValidation">Checking...</div>
+            </div>
+            <div class="config-item">
+                <h4>🗝️ Google API Key</h4>
+                <div class="config-value" id="apiKeyValue">Loading...</div>
+                <div class="validation-result unknown" id="apiKeyValidation">Checking...</div>
+            </div>
+            <div class="config-item">
+                <h4>📁 Target Folder ID</h4>
+                <div class="config-value" id="folderIdValue">Loading...</div>
+                <div class="validation-result unknown" id="folderValidation">Checking...</div>
+            </div>
+            <div class="config-item">
+                <h4>🌐 Current Domain</h4>
+                <div class="config-value" id="domainValue">Loading...</div>
+                <div class="validation-result unknown" id="domainValidation">Checking...</div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 Configuration Tests</h3>
+            <button onclick="runConfigurationTests()">🚀 Run All Tests</button>
+            <button onclick="testGoogleAPIs()">📚 Test API Loading</button>
+            <button onclick="validateCredentials()">🔐 Validate Credentials</button>
+            
+            <div id="testResults" style="margin-top: 20px;"></div>
+        </div>
+        
+        <div class="container">
+            <h3>✅ Configuration Checklist</h3>
+            <ul class="checklist" id="checklist">
+                <li><span class="check-icon">⏳</span>Google Client ID is set and valid format</li>
+                <li><span class="check-icon">⏳</span>Google API Key is set and valid format</li>
+                <li><span class="check-icon">⏳</span>Target Folder ID is set and accessible</li>
+                <li><span class="check-icon">⏳</span>Domain is HTTPS (required for OAuth2)</li>
+                <li><span class="check-icon">⏳</span>Google APIs can load from this domain</li>
+                <li><span class="check-icon">⏳</span>OAuth2 Client ID includes this domain</li>
+                <li><span class="check-icon">⏳</span>API Key allows requests from this domain</li>
+                <li><span class="check-icon">⏳</span>Google Drive API is enabled</li>
+            </ul>
+        </div>
+        
+        <div class="container">
+            <h3>🔧 Quick Fixes</h3>
+            <div id="quickFixes">
+                <div class="status info">Run tests to get personalized recommendations.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google APIs -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+
+    <script>
+        // Your current configuration
+        const GOOGLE_CLIENT_ID = '465131191592-kkd73c4d57upufd13njhoue4f4p1ggo2.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = 'AIzaSyCL9IVXR7NdT3Iif7Do5YTgVD-l_GCpzYk';
+        const TARGET_FOLDER_ID = '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+        let gapi_loaded = false;
+        let gis_loaded = false;
+
+        // Initialize on page load
+        window.onload = function() {
+            displayConfiguration();
+            setTimeout(initializeAPIs, 1000);
+        };
+
+        function displayConfiguration() {
+            // Display configuration values
+            document.getElementById('clientIdValue').textContent = GOOGLE_CLIENT_ID || 'NOT SET';
+            document.getElementById('apiKeyValue').textContent = GOOGLE_API_KEY ? 
+                GOOGLE_API_KEY.substring(0, 20) + '...' + GOOGLE_API_KEY.substring(-10) : 'NOT SET';
+            document.getElementById('folderIdValue').textContent = TARGET_FOLDER_ID || 'NOT SET';
+            document.getElementById('domainValue').textContent = window.location.origin;
+
+            // Validate formats
+            validateClientIdFormat();
+            validateApiKeyFormat();
+            validateFolderIdFormat();
+            validateDomainFormat();
+        }
+
+        function validateClientIdFormat() {
+            const element = document.getElementById('clientIdValidation');
+            if (!GOOGLE_CLIENT_ID) {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ Not configured';
+                updateChecklist(0, '❌');
+            } else if (GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com')) {
+                element.className = 'validation-result valid';
+                element.textContent = '✅ Valid format';
+                updateChecklist(0, '✅');
+            } else {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ Invalid format';
+                updateChecklist(0, '❌');
+            }
+        }
+
+        function validateApiKeyFormat() {
+            const element = document.getElementById('apiKeyValidation');
+            if (!GOOGLE_API_KEY) {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ Not configured';
+                updateChecklist(1, '❌');
+            } else if (GOOGLE_API_KEY.startsWith('AIza')) {
+                element.className = 'validation-result valid';
+                element.textContent = '✅ Valid format';
+                updateChecklist(1, '✅');
+            } else {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ Invalid format';
+                updateChecklist(1, '❌');
+            }
+        }
+
+        function validateFolderIdFormat() {
+            const element = document.getElementById('folderValidation');
+            if (!TARGET_FOLDER_ID) {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ Not configured';
+                updateChecklist(2, '❌');
+            } else if (TARGET_FOLDER_ID.length > 20) {
+                element.className = 'validation-result valid';
+                element.textContent = '✅ Valid format';
+                updateChecklist(2, '✅');
+            } else {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ Invalid format';
+                updateChecklist(2, '❌');
+            }
+        }
+
+        function validateDomainFormat() {
+            const element = document.getElementById('domainValidation');
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            if (protocol === 'https:') {
+                element.className = 'validation-result valid';
+                element.textContent = '✅ HTTPS (required)';
+                updateChecklist(3, '✅');
+            } else if (hostname.includes('localhost')) {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ localhost not supported';
+                updateChecklist(3, '❌');
+            } else {
+                element.className = 'validation-result invalid';
+                element.textContent = '❌ HTTPS required';
+                updateChecklist(3, '❌');
+            }
+        }
+
+        function updateChecklist(index, icon) {
+            const checklistItems = document.querySelectorAll('.checklist .check-icon');
+            if (checklistItems[index]) {
+                checklistItems[index].textContent = icon;
+            }
+        }
+
+        function addTestResult(type, message) {
+            const resultsDiv = document.getElementById('testResults');
+            const time = new Date().toLocaleTimeString();
+            
+            resultsDiv.innerHTML += `
+                <div class="status ${type}">
+                    <strong>${message}</strong>
+                    <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">${time}</div>
+                </div>
+            `;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function initializeAPIs() {
+            try {
+                if (typeof gapi !== 'undefined') {
+                    await new Promise(resolve => {
+                        gapi.load('client', resolve);
+                    });
+                    await initializeGapiClient();
+                    updateChecklist(4, '✅');
+                } else {
+                    updateChecklist(4, '❌');
+                }
+                
+                if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID) {
+                    initializeGisClient();
+                    updateChecklist(4, '✅');
+                } else {
+                    updateChecklist(4, '❌');
+                }
+                
+            } catch (error) {
+                addTestResult('error', `API initialization failed: ${error.message}`);
+                updateChecklist(4, '❌');
+            }
+        }
+
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    apiKey: GOOGLE_API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapi_loaded = true;
+            } catch (error) {
+                throw new Error(`GAPI initialization failed: ${error.message}`);
+            }
+        }
+
+        function initializeGisClient() {
+            try {
+                const tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: SCOPES,
+                    callback: () => {} // Dummy callback for initialization
+                });
+                gis_loaded = true;
+            } catch (error) {
+                throw new Error(`GIS initialization failed: ${error.message}`);
+            }
+        }
+
+        async function runConfigurationTests() {
+            document.getElementById('testResults').innerHTML = '';
+            addTestResult('info', '🚀 Starting comprehensive configuration tests...');
+            
+            // Test 1: Configuration completeness
+            addTestResult('info', '1️⃣ Testing configuration completeness...');
+            let configComplete = true;
+            
+            if (!GOOGLE_CLIENT_ID) {
+                addTestResult('error', '❌ Google Client ID is missing');
+                configComplete = false;
+            }
+            if (!GOOGLE_API_KEY) {
+                addTestResult('error', '❌ Google API Key is missing');
+                configComplete = false;
+            }
+            if (!TARGET_FOLDER_ID) {
+                addTestResult('error', '❌ Target Folder ID is missing');
+                configComplete = false;
+            }
+            
+            if (configComplete) {
+                addTestResult('success', '✅ All configuration values are set');
+            }
+            
+            // Test 2: Format validation
+            addTestResult('info', '2️⃣ Testing format validation...');
+            
+            if (GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com')) {
+                addTestResult('error', '❌ Client ID format is invalid');
+            } else if (GOOGLE_CLIENT_ID) {
+                addTestResult('success', '✅ Client ID format is valid');
+            }
+            
+            if (GOOGLE_API_KEY && !GOOGLE_API_KEY.startsWith('AIza')) {
+                addTestResult('error', '❌ API Key format is invalid');
+            } else if (GOOGLE_API_KEY) {
+                addTestResult('success', '✅ API Key format is valid');
+            }
+            
+            // Test 3: Domain compatibility
+            addTestResult('info', '3️⃣ Testing domain compatibility...');
+            
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            if (protocol !== 'https:' && !hostname.includes('localhost')) {
+                addTestResult('error', '❌ HTTPS is required for Google OAuth2');
+            } else if (hostname.includes('localhost')) {
+                addTestResult('error', '❌ localhost is not supported by Google OAuth2');
+            } else {
+                addTestResult('success', '✅ Domain is compatible with Google OAuth2');
+            }
+            
+            // Test 4: API loading
+            addTestResult('info', '4️⃣ Testing Google API loading...');
+            
+            if (typeof gapi === 'undefined') {
+                addTestResult('error', '❌ Google API library failed to load');
+            } else {
+                addTestResult('success', '✅ Google API library loaded successfully');
+            }
+            
+            if (typeof google === 'undefined') {
+                addTestResult('error', '❌ Google Identity Services failed to load');
+            } else {
+                addTestResult('success', '✅ Google Identity Services loaded successfully');
+            }
+            
+            // Test 5: Client initialization
+            addTestResult('info', '5️⃣ Testing client initialization...');
+            
+            if (gapi_loaded) {
+                addTestResult('success', '✅ GAPI client initialized successfully');
+                updateChecklist(7, '✅');
+            } else {
+                addTestResult('error', '❌ GAPI client failed to initialize');
+                updateChecklist(7, '❌');
+            }
+            
+            if (gis_loaded) {
+                addTestResult('success', '✅ GIS client initialized successfully');
+            } else {
+                addTestResult('error', '❌ GIS client failed to initialize');
+            }
+            
+            // Generate overall status
+            setTimeout(() => {
+                generateOverallStatus();
+                generateQuickFixes();
+            }, 1000);
+        }
+
+        function generateOverallStatus() {
+            const hasAllCredentials = GOOGLE_CLIENT_ID && GOOGLE_API_KEY && TARGET_FOLDER_ID;
+            const validFormats = GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com') && 
+                               GOOGLE_API_KEY.startsWith('AIza');
+            const httpsOk = window.location.protocol === 'https:' || window.location.hostname.includes('localhost');
+            const apisLoaded = gapi_loaded && gis_loaded;
+            
+            const statusDiv = document.getElementById('overallStatus');
+            
+            if (hasAllCredentials && validFormats && httpsOk && apisLoaded) {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '<strong>🎉 Configuration Status:</strong> All systems ready! Your Google API configuration is complete and functional.';
+            } else if (hasAllCredentials && validFormats) {
+                statusDiv.className = 'status warning';
+                statusDiv.innerHTML = '<strong>⚠️ Configuration Status:</strong> Configuration is mostly complete but needs domain/API fixes.';
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<strong>❌ Configuration Status:</strong> Configuration is incomplete or has errors.';
+            }
+        }
+
+        function generateQuickFixes() {
+            const fixesDiv = document.getElementById('quickFixes');
+            let fixes = [];
+            
+            if (!GOOGLE_CLIENT_ID || !GOOGLE_API_KEY) {
+                fixes.push({
+                    type: 'error',
+                    title: '🔧 Complete Credentials Setup',
+                    description: 'Add missing Google Cloud Console credentials to your application.'
+                });
+            }
+            
+            if (window.location.hostname.includes('localhost')) {
+                fixes.push({
+                    type: 'error',
+                    title: '🌐 Deploy to Real Domain',
+                    description: 'Google OAuth2 requires a real domain. Deploy to labreporttool.xyz for testing.'
+                });
+            }
+            
+            if (!gapi_loaded || !gis_loaded) {
+                fixes.push({
+                    type: 'warning',
+                    title: '🔐 Check Domain Authorization',
+                    description: 'Add your domain to Google Cloud Console OAuth2 authorized origins.'
+                });
+            }
+            
+            if (fixes.length === 0) {
+                fixes.push({
+                    type: 'success',
+                    title: '✅ Configuration Complete',
+                    description: 'Your Google API configuration is ready! Test the authentication flow in your main application.'
+                });
+            }
+            
+            fixesDiv.innerHTML = fixes.map(fix => `
+                <div class="status ${fix.type}">
+                    <strong>${fix.title}:</strong> ${fix.description}
+                </div>
+            `).join('');
+        }
+
+        function testGoogleAPIs() {
+            document.getElementById('testResults').innerHTML = '';
+            addTestResult('info', '📚 Testing Google API loading...');
+            
+            const tests = [
+                { name: 'GAPI Available', result: typeof gapi !== 'undefined' },
+                { name: 'Google Identity Available', result: typeof google !== 'undefined' },
+                { name: 'GAPI Client Loaded', result: gapi_loaded },
+                { name: 'GIS Client Loaded', result: gis_loaded }
+            ];
+            
+            tests.forEach(test => {
+                const status = test.result ? 'success' : 'error';
+                const icon = test.result ? '✅' : '❌';
+                addTestResult(status, `${icon} ${test.name}: ${test.result ? 'OK' : 'FAILED'}`);
+            });
+        }
+
+        function validateCredentials() {
+            document.getElementById('testResults').innerHTML = '';
+            addTestResult('info', '🔐 Validating credentials...');
+            
+            // Validate Client ID
+            if (GOOGLE_CLIENT_ID) {
+                if (GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com')) {
+                    addTestResult('success', '✅ Client ID format is valid');
+                } else {
+                    addTestResult('error', '❌ Client ID format is invalid');
+                }
+            } else {
+                addTestResult('error', '❌ Client ID is not set');
+            }
+            
+            // Validate API Key
+            if (GOOGLE_API_KEY) {
+                if (GOOGLE_API_KEY.startsWith('AIza')) {
+                    addTestResult('success', '✅ API Key format is valid');
+                } else {
+                    addTestResult('error', '❌ API Key format is invalid');
+                }
+            } else {
+                addTestResult('error', '❌ API Key is not set');
+            }
+            
+            // Validate Folder ID
+            if (TARGET_FOLDER_ID) {
+                if (TARGET_FOLDER_ID.length > 20) {
+                    addTestResult('success', '✅ Folder ID format looks valid');
+                    addTestResult('info', `📁 Folder link: https://drive.google.com/drive/folders/${TARGET_FOLDER_ID}`);
+                } else {
+                    addTestResult('error', '❌ Folder ID format is invalid');
+                }
+            } else {
+                addTestResult('error', '❌ Folder ID is not set');
+            }
+        }
+    </script>
+</body>
+</html>
