@@ -24,7 +24,7 @@ CONFIG = {
     'TARGET_EMAIL': os.environ.get('TARGET_EMAIL', 'labreporting1177@gmail.com'),
     'TARGET_FOLDER_ID': os.environ.get('TARGET_FOLDER_ID', '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc'),
     'SERVICE_ACCOUNT_EMAIL': os.environ.get('SERVICE_ACCOUNT_EMAIL', 'pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com'),
-    'SERVICE_ACCOUNT_FILE': 'service-account-key.json',
+    'SERVICE_ACCOUNT_FILE': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'service-account-key.json'),
     'SCOPES': ['https://www.googleapis.com/auth/drive.file']
 }
 
