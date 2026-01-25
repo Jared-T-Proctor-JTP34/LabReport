@@ -320,10 +320,15 @@ th {
   </div>
 </div>
 
-<!-- System Status -->
+<!-- System Status with Enhanced Status Symbol -->
 <div id="systemStatus" class="system-status">
-  <strong>📊 System Status:</strong> <span id="systemStatusText">Initializing...</span>
-  <div id="systemDetails" style="font-size:12px;margin-top:5px;">Connecting to backend services...</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div id="statusSymbol" style="font-size:24px;">🔄</div>
+    <div>
+      <strong>System Status:</strong> <span id="systemStatusText">Initializing...</span>
+      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to backend services...</div>
+    </div>
+  </div>
   <div style="font-size:11px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.3);border-radius:4px;">
     <strong>📋 Auto-Export:</strong> All compliance reports automatically save to Google Drive in the background
   </div>
@@ -556,11 +561,35 @@ function updateSystemStatus(status, text, details) {
   const statusDiv = document.getElementById('systemStatus');
   const statusText = document.getElementById('systemStatusText');
   const statusDetails = document.getElementById('systemDetails');
+  const statusSymbol = document.getElementById('statusSymbol');
   
-  if (statusDiv && statusText && statusDetails) {
+  if (statusDiv && statusText && statusDetails && statusSymbol) {
     statusDiv.className = `system-status ${status}`;
     statusText.textContent = text;
     statusDetails.textContent = details;
+    
+    // Update status symbol based on connection status
+    switch(status) {
+      case 'connected':
+        statusSymbol.textContent = '✅';
+        statusSymbol.title = 'Google Drive API Connected - Ready to upload reports';
+        break;
+      case 'warning':
+        statusSymbol.textContent = '⚠️';
+        statusSymbol.title = 'Backend service offline - Files will download locally';
+        break;
+      case 'error':
+        statusSymbol.textContent = '❌';
+        statusSymbol.title = 'Connection error - Check backend service';
+        break;
+      case 'info':
+        statusSymbol.textContent = '🔄';
+        statusSymbol.title = 'Connecting to backend service...';
+        break;
+      default:
+        statusSymbol.textContent = '🔄';
+        statusSymbol.title = 'Initializing system...';
+    }
   }
 }
 

@@ -20,7 +20,7 @@ For local testing, you need an HTTPS server:
 ```bash
 python local-https-server.py
 ```
-Then open: `https://localhost:8000/test-upload-tool.html`
+Then open: `https://localhost:8000/Pharmacy_Compliance_Backend.html`
 
 #### Method B: Node.js (if you have it)
 ```bash
@@ -40,23 +40,22 @@ The application will still work! It will:
 ## 🧪 Testing Steps
 
 ### 1. Test PDF Generation (Works Offline)
-1. Open `Pharmacy_Compliance_GoogleDrive.html`
+1. Open `Pharmacy_Compliance_Backend.html`
 2. Login with: `admin` / `pharmacy123`
 3. Enter compliant data:
    - Temperature: 72°F
    - Humidity: 45%
    - Initials: Your initials
 4. Click "📊 Get Report"
-5. PDF should download locally
+5. PDF should download locally (if backend offline) or upload to Google Drive (if backend running)
 
-### 2. Test Google Drive Upload (Requires HTTPS)
-1. Set up HTTPS server (see options above)
-2. Open `https://localhost:8000/test-upload-tool.html`
-3. Click "🔐 Authenticate Google Drive"
-4. Complete Google OAuth flow
-5. Click "📋 Generate Compliant Document"
-6. Click "📤 Upload to Google Drive"
-7. Check your Google Drive folder
+### 2. Test Google Drive Upload (Requires Backend Service)
+1. Start the backend service: `python3 google_drive_backend.py`
+2. Open `Pharmacy_Compliance_Backend.html`
+3. Login with: `admin` / `pharmacy123`
+4. Enter test compliance data and generate report
+5. Check the status symbol - should show ✅ when connected
+6. Check your Google Drive folder for uploaded PDF
 
 ## 🔧 Current Configuration Status
 

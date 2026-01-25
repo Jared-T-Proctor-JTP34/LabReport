@@ -120,8 +120,8 @@ def start_https_server(port=8000):
         print("🧪 You can now test Google Drive integration!")
         print("⏹️  Press Ctrl+C to stop the server")
         print()
-        print("🌐 Open in browser: https://localhost:8000/test-upload-tool.html")
-        print("🌐 Main app: https://localhost:8000/Pharmacy_Compliance_GoogleDrive.html")
+        print("🌐 Main app: https://localhost:8000/Pharmacy_Compliance_Backend.html")
+        print("🌐 Entry point: https://localhost:8000/index.html")
         print()
         
         httpd.serve_forever()
