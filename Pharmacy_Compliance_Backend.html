@@ -596,67 +596,39 @@ async function checkBackendStatus() {
   }
 }
 
-// Google API Direct Integration (for GitHub Pages) - Simplified approach
+// Google Identity Services Integration (New Method - No Deprecated APIs)
 async function initializeGoogleAPI() {
   if (!isProduction) return false;
   
   try {
-    console.log('🔄 Initializing Google API for GitHub Pages...');
+    console.log('🔄 Initializing Google Identity Services for GitHub Pages...');
     
-    // Load Google Identity Services (new method)
+    // Load ONLY Google Identity Services (no old gapi)
     if (!window.google) {
       console.log('📥 Loading Google Identity Services...');
       await loadGoogleIdentityServices();
     }
     
-    // Load Google API for Drive operations
-    if (!window.gapi) {
-      console.log('📥 Loading Google API script...');
-      await loadGoogleAPI();
-    }
-    
-    // Initialize Google API client (for Drive API only)
-    console.log('⚙️ Initializing Google API client...');
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Google API initialization timeout'));
-      }, 10000);
-      
-      gapi.load('client', {
-        callback: () => {
-          clearTimeout(timeout);
-          resolve();
-        },
-        onerror: (error) => {
-          clearTimeout(timeout);
-          reject(error);
-        }
-      });
-    });
-    
-    // Initialize the client (API key only, no auth)
-    console.log('🔑 Initializing Google Drive client...');
-    await gapi.client.init({
-      apiKey: CONFIG.GOOGLE_API_KEY,
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-    });
+    console.log('🆔 Initializing Google Identity Services...');
     
     // Initialize Google Identity Services for authentication
-    console.log('🆔 Initializing Google Identity Services...');
     window.googleTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CONFIG.GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/drive.file',
-      callback: (tokenResponse) => {
+      callback: async (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           state.google_authenticated = true;
           state.access_token = tokenResponse.access_token;
-          updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
           console.log('✅ Google Drive authentication successful');
           
-          // Test the connection
-          testGoogleDriveConnection().catch(error => {
-            console.warn('⚠️ Google Drive connection test failed:', error);
-          });
+          // Test upload capability
+          try {
+            await testGoogleDriveUpload();
+            updateSystemStatus('connected', 'Google Drive Connected', 'Direct API integration ready - reports will auto-upload to Google Drive');
+          } catch (error) {
+            console.warn('⚠️ Google Drive test failed:', error);
+            updateSystemStatus('warning', 'Google Drive Connected (Limited)', 'Authentication successful but upload test failed');
+          }
         }
       },
       error_callback: (error) => {
@@ -666,23 +638,20 @@ async function initializeGoogleAPI() {
     });
     
     state.google_api_loaded = true;
-    console.log('✅ Google API and Identity Services loaded successfully');
+    console.log('✅ Google Identity Services loaded successfully');
     
     updateSystemStatus('warning', 'Google Drive Authentication Required', 'Click to authenticate with Google Drive for automatic uploads');
-    console.log('⚠️ Google Drive authentication required');
+    console.log('⚠️ Google Drive authentication required - click status symbol to authenticate');
     
     return true;
   } catch (error) {
-    console.error('❌ Google API initialization failed:', error);
+    console.error('❌ Google Identity Services initialization failed:', error);
     
-    // Provide specific error messages
-    let errorMessage = 'Google API initialization failed';
+    let errorMessage = 'Google Identity Services initialization failed';
     if (error.message && error.message.includes('Not a valid origin')) {
-      errorMessage = 'Domain not authorized in Google Cloud Console';
-    } else if (error.message && error.message.includes('API key')) {
-      errorMessage = 'Google API key configuration issue';
-    } else if (error.message && error.message.includes('timeout')) {
-      errorMessage = 'Google API loading timeout - check internet connection';
+      errorMessage = 'Domain not authorized in Google Cloud Console - check setup guide';
+    } else if (error.message && error.message.includes('client_id')) {
+      errorMessage = 'Google Client ID configuration issue';
     }
     
     updateSystemStatus('error', 'Google API Failed', `${errorMessage} - reports will download locally`);
@@ -690,43 +659,7 @@ async function initializeGoogleAPI() {
   }
 }
 
-// Load Google API script
-function loadGoogleAPI() {
-  return new Promise((resolve, reject) => {
-    if (window.gapi) {
-      console.log('✅ Google API already loaded');
-      resolve();
-      return;
-    }
-    
-    console.log('📥 Loading Google API script from CDN...');
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      console.log('✅ Google API script loaded successfully');
-      resolve();
-    };
-    
-    script.onerror = (error) => {
-      console.error('❌ Failed to load Google API script:', error);
-      reject(new Error('Failed to load Google API script'));
-    };
-    
-    document.head.appendChild(script);
-    
-    // Timeout fallback
-    setTimeout(() => {
-      if (!window.gapi) {
-        reject(new Error('Google API script loading timeout'));
-      }
-    }, 15000); // 15 second timeout
-  });
-}
-
-// Load Google Identity Services script
+// Load Google Identity Services script (New Method Only)
 function loadGoogleIdentityServices() {
   return new Promise((resolve, reject) => {
     if (window.google && window.google.accounts) {
@@ -758,59 +691,17 @@ function loadGoogleIdentityServices() {
       if (!window.google || !window.google.accounts) {
         reject(new Error('Google Identity Services script loading timeout'));
       }
-    }, 15000); // 15 second timeout
+    }, 15000);
   });
 }
 
-// Google Drive upload using direct API with new authentication
-async function uploadToGoogleDrive(fileName, content) {
-  if (!state.google_api_loaded || !state.google_authenticated || !state.access_token) {
-    throw new Error('Google API not ready or not authenticated');
-  }
-  
-  try {
-    // Set the access token for the API client
-    gapi.client.setToken({
-      access_token: state.access_token
-    });
-    
-    const metadata = {
-      name: fileName,
-      parents: [CONFIG.TARGET_FOLDER_ID]
-    };
-    
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-    form.append('file', content);
-    
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: new Headers({
-        'Authorization': `Bearer ${state.access_token}`
-      }),
-      body: form
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    console.log('✅ File uploaded to Google Drive:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ Google Drive upload failed:', error);
-    throw error;
-  }
-}
-
-// Authenticate with Google (for GitHub Pages) - Updated to use Google Identity Services
+// Authenticate with Google (for GitHub Pages) - New Google Identity Services
 async function authenticateGoogle() {
   if (!state.google_api_loaded) {
-    console.log('🔄 Google API not loaded, initializing...');
+    console.log('🔄 Google Identity Services not loaded, initializing...');
     const initialized = await initializeGoogleAPI();
     if (!initialized) {
-      console.error('❌ Cannot authenticate - Google API initialization failed');
+      console.error('❌ Cannot authenticate - Google Identity Services initialization failed');
       return false;
     }
   }
@@ -823,7 +714,7 @@ async function authenticateGoogle() {
       throw new Error('Google Token Client not initialized');
     }
     
-    // Request access token using the new Google Identity Services
+    // Request access token using Google Identity Services
     window.googleTokenClient.requestAccessToken();
     
     return true; // The callback will handle the success/failure
@@ -842,31 +733,71 @@ async function authenticateGoogle() {
   }
 }
 
-// Test Google Drive connection
-async function testGoogleDriveConnection() {
+// Google Drive upload using REST API directly (No deprecated libraries)
+async function uploadToGoogleDrive(fileName, content) {
+  if (!state.google_authenticated || !state.access_token) {
+    throw new Error('Google Drive not authenticated');
+  }
+  
   try {
-    console.log('🧪 Testing Google Drive connection...');
+    console.log(`📤 Uploading ${fileName} to Google Drive...`);
+    
+    const metadata = {
+      name: fileName,
+      parents: [CONFIG.TARGET_FOLDER_ID]
+    };
+    
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+    form.append('file', content);
+    
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.access_token}`
+      },
+      body: form
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ File uploaded to Google Drive successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Google Drive upload failed:', error);
+    throw error;
+  }
+}
+
+// Test Google Drive upload capability
+async function testGoogleDriveUpload() {
+  try {
+    console.log('🧪 Testing Google Drive upload capability...');
     
     if (!state.access_token) {
       throw new Error('No access token available');
     }
     
-    // Set the access token for gapi client
-    gapi.client.setToken({
-      access_token: state.access_token
+    // Test by checking if we can access the target folder
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${CONFIG.TARGET_FOLDER_ID}?fields=id,name`, {
+      headers: {
+        'Authorization': `Bearer ${state.access_token}`
+      }
     });
     
-    // Try to list files in the target folder (just to test connection)
-    const response = await gapi.client.drive.files.list({
-      q: `'${CONFIG.TARGET_FOLDER_ID}' in parents`,
-      pageSize: 1,
-      fields: 'files(id, name)'
-    });
+    if (!response.ok) {
+      throw new Error(`Cannot access target folder: ${response.status} ${response.statusText}`);
+    }
     
-    console.log('✅ Google Drive connection test successful');
+    const folderInfo = await response.json();
+    console.log('✅ Google Drive folder access test successful:', folderInfo);
     return true;
   } catch (error) {
-    console.error('❌ Google Drive connection test failed:', error);
+    console.error('❌ Google Drive test failed:', error);
     throw error;
   }
 }
