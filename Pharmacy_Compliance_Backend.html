@@ -371,19 +371,20 @@ th {
   </div>
 </div>
 
-<!-- System Status with Enhanced Status Symbol -->
+<!-- System Status with Service Account Integration -->
 <div id="systemStatus" class="system-status">
   <div style="display:flex;align-items:center;gap:10px;">
-    <div id="statusSymbol" style="font-size:24px;cursor:pointer;" title="Click for Google Drive authentication">🔄</div>
+    <div id="statusSymbol" style="font-size:24px;" title="Service Account Google Drive Integration">🔄</div>
     <div>
       <strong>System Status:</strong> <span id="systemStatusText">Initializing...</span>
-      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to services...</div>
+      <div id="systemDetails" style="font-size:12px;margin-top:2px;">Connecting to service account backend...</div>
     </div>
   </div>
   <div style="font-size:11px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.3);border-radius:4px;">
-    <strong>📋 Auto-Export:</strong> Reports automatically save to Google Drive or download locally based on available services
+    <strong>📋 Service Account Integration:</strong> Reports automatically upload to <strong>labreporting1177@gmail.com</strong> Google Drive
     <div style="margin-top:4px;opacity:0.8;">
-      <strong>🌍 Environment:</strong> <span id="environmentInfo">Detecting...</span>
+      <strong>🌍 Environment:</strong> <span id="environmentInfo">Detecting...</span> | 
+      <strong>🔑 Service Account:</strong> pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com
     </div>
   </div>
 </div>
@@ -568,11 +569,11 @@ const CONFIG = {
   // Dynamic backend URL based on environment
   BACKEND_URL: isDevelopment ? 'http://localhost:8001' : 'https://api.labreporttool.xyz',
   
-  // Google API Configuration for GitHub Pages
-  GOOGLE_API_KEY: 'AIzaSyCL9IVXR7NdT3Iif7Do5YTgVD-l_GCpzYk',
-  GOOGLE_CLIENT_ID: '465131191592-kkd73c4d57upufd13njhoue4f4p1ggo2.apps.googleusercontent.com',
-  TARGET_FOLDER_ID: '', // Empty = root folder (for testing)
-  BACKUP_FOLDER_ID: '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc', // Original folder ID
+  // Service Account Configuration (no frontend Google API needed)
+  USE_SERVICE_ACCOUNT: true,
+  TARGET_EMAIL: 'labreporting1177@gmail.com',
+  SERVICE_ACCOUNT_EMAIL: 'pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com',
+  TARGET_FOLDER_ID: '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc',
   
   // Environment info
   ENVIRONMENT: isDevelopment ? 'development' : 'production',
@@ -616,31 +617,31 @@ async function checkBackendStatus() {
   console.log(`🔍 Environment check: isDevelopment=${isDevelopment}, isProduction=${isProduction}`);
   console.log(`🌐 Current hostname: ${location.hostname}`);
   
-  // Skip backend check for GitHub Pages - we use direct Google API integration
-  if (isProduction) {
-    console.log('🌐 GitHub Pages detected - skipping backend check, using direct Google API integration');
-    state.backend_available = false;
-    // Initialize Google API directly for GitHub Pages
-    await initializeGoogleAPI();
-    return false;
-  }
-  
-  // Only try backend service for local development
-  console.log('🏠 Local development detected - checking backend service...');
+  // Check if service account backend is available
   try {
-    console.log(`🔄 Attempting to connect to: ${CONFIG.BACKEND_URL}/status`);
+    console.log(`🔄 Attempting to connect to service account backend: ${CONFIG.BACKEND_URL}/status`);
     const response = await fetch(`${CONFIG.BACKEND_URL}/status`);
     if (response.ok) {
+      const status = await response.json();
       state.backend_available = true;
-      updateSystemStatus('connected', 'Backend Service Connected', `Google Drive integration ready - reports will auto-upload (${CONFIG.ENVIRONMENT})`);
-      console.log('✅ Backend service connected successfully');
+      
+      if (status.drive_service_ready) {
+        updateSystemStatus('connected', 'Google Drive Connected (Service Account)', 
+          `Automatic uploads to ${CONFIG.TARGET_EMAIL} - No authentication required`);
+        console.log('✅ Service account backend connected with Google Drive ready');
+      } else {
+        updateSystemStatus('warning', 'Backend Connected (Drive Setup Needed)', 
+          'Backend service running but Google Drive setup incomplete');
+        console.log('⚠️ Backend connected but Google Drive service not ready');
+      }
       return true;
     }
     throw new Error('Backend service not responding');
   } catch (error) {
     state.backend_available = false;
-    updateSystemStatus('warning', 'Backend Service Offline', 'Reports will download locally until backend service is started');
-    console.log('⚠️ Backend service not available:', error.message);
+    updateSystemStatus('warning', 'Service Account Backend Offline', 
+      'Reports will download locally until backend service is started');
+    console.log('⚠️ Service account backend not available:', error.message);
     return false;
   }
 }
@@ -961,7 +962,7 @@ function updateSystemStatus(status, text, details) {
 }
 
 async function uploadToBackend(fileName, content, contentType = 'application/pdf') {
-  // Try backend service first (for local development)
+  // Use service account backend for all uploads
   if (state.backend_available) {
     try {
       let fileContent = content;
@@ -985,35 +986,20 @@ async function uploadToBackend(fileName, content, contentType = 'application/pdf
       });
       
       if (response.ok) {
-        console.log('File uploaded via backend service');
+        const result = await response.json();
+        console.log(`✅ File uploaded to ${CONFIG.TARGET_EMAIL} Google Drive via service account`);
+        console.log(`📁 File ID: ${result.file_id}`);
+        console.log(`🔗 View link: ${result.web_view_link}`);
         return true;
       }
-      throw new Error('Backend upload failed');
+      throw new Error('Service account upload failed');
     } catch (error) {
-      console.error('Backend upload error:', error);
-    }
-  }
-  
-  // Try Google Drive direct API (for GitHub Pages)
-  if (isProduction && state.google_api_loaded) {
-    try {
-      if (!state.google_authenticated) {
-        // Try to authenticate
-        const authenticated = await authenticateGoogle();
-        if (!authenticated) {
-          throw new Error('Authentication required');
-        }
-      }
-      
-      await uploadToGoogleDrive(fileName, content);
-      console.log('File uploaded via Google Drive API');
-      return true;
-    } catch (error) {
-      console.error('Google Drive upload error:', error);
+      console.error('❌ Service account upload error:', error);
     }
   }
   
   // Fallback: Download locally
+  console.log('📥 Backend not available - downloading file locally');
   downloadFile(fileName, content);
   return true;
 }
@@ -1386,7 +1372,7 @@ function loadData() {
   });
 }
 
-// Initialize
+// Initialize system - no Google API needed with service account
 document.addEventListener('DOMContentLoaded', function() {
   checkLogin();
   
@@ -1402,6 +1388,8 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log(`📍 Domain: ${location.hostname}`);
   console.log(`🏠 Is Development: ${isDevelopment}`);
   console.log(`🌐 Is Production: ${isProduction}`);
+  console.log(`📧 Target Email: ${CONFIG.TARGET_EMAIL}`);
+  console.log(`🔑 Service Account: ${CONFIG.SERVICE_ACCOUNT_EMAIL}`);
   
   updateSystemStatus('info', 'Initializing System...', `Checking ${CONFIG.ENVIRONMENT} services...`);
   
