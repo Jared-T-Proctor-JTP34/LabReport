@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Upload Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border-left: 5px solid #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-left: 5px solid #dc3545; }
+        .warning { background: #fff3cd; color: #856404; border-left: 5px solid #ffc107; }
+        .info { background: #d1ecf1; color: #0c5460; border-left: 5px solid #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .test-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .compliant-data {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .upload-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #f8f9fa;
+            margin-top: 20px;
+        }
+        .preview-section {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .preview-section h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .preview-content {
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            background: white;
+            padding: 10px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📤 Google Drive Upload Test</h1>
+        <p>Test uploading a compliant pharmacy document to your Google Drive folder.</p>
+        
+        <div id="authStatus" class="status warning">
+            <strong>🔐 Authentication Status:</strong> Not authenticated - Click "Authenticate" to connect to Google Drive
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="authenticateGoogleDrive()" id="authBtn">🔐 Authenticate Google Drive</button>
+            <button onclick="generateCompliantDocument()" id="generateBtn" disabled>📋 Generate Compliant Document</button>
+            <button onclick="uploadDocument()" id="uploadBtn" disabled>📤 Upload to Google Drive</button>
+        </div>
+        
+        <div class="test-form">
+            <h3>🧪 Sample Compliant Data</h3>
+            <div class="form-group">
+                <label>Compounding Area:</label>
+                <select id="areaSelect">
+                    <option value="795">USP 795 - Non-Sterile</option>
+                    <option value="797">USP 797 - Sterile</option>
+                    <option value="800">USP 800 - Hazardous</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Temperature (°F):</label>
+                <input type="number" id="tempInput" value="72" min="68" max="77" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Humidity (%):</label>
+                <input type="number" id="humInput" value="45" min="0" max="60" step="0.1">
+            </div>
+            <div class="form-group" id="pressureGroup" style="display: none;">
+                <label>Air Pressure (inches WC):</label>
+                <input type="number" id="pressureInput" value="0.025" step="0.001">
+            </div>
+            <div class="form-group">
+                <label>Staff Initials:</label>
+                <input type="text" id="staffInput" value="JTP" maxlength="10">
+            </div>
+            
+            <div class="compliant-data">
+                <strong>✅ This data is USP compliant:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Temperature: 68-77°F ✅</li>
+                    <li>Humidity: ≤60% RH ✅</li>
+                    <li id="pressureCompliance" style="display: none;">Air Pressure: Within range ✅</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="preview-section" id="previewSection" style="display: none;">
+            <h4>📄 Document Preview</h4>
+            <div class="preview-content" id="documentPreview"></div>
+        </div>
+        
+        <div class="upload-results" id="uploadResults">
+            <div class="status info">Click "Authenticate Google Drive" to begin testing.</div>
+        </div>
+    </div>
+
+    <!-- Google APIs -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+
+    <script>
+        // Your Google API configuration
+        const GOOGLE_CLIENT_ID = '465131191592-kkd73c4d57upufd13njhoue4f4p1ggo2.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = 'AIzaSyCL9IVXR7NdT3Iif7Do5YTgVD-l_GCpzYk';
+        const TARGET_FOLDER_ID = '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+        let gapi_loaded = false;
+        let gis_loaded = false;
+        let tokenClient;
+        let access_token = null;
+        let generatedDocument = null;
+
+        // Initialize on page load
+        window.onload = function() {
+            setupFormHandlers();
+            setTimeout(initializeAPIs, 1000);
+        };
+
+        function setupFormHandlers() {
+            // Show/hide pressure field based on area selection
+            document.getElementById('areaSelect').addEventListener('change', function() {
+                const area = this.value;
+                const pressureGroup = document.getElementById('pressureGroup');
+                const pressureCompliance = document.getElementById('pressureCompliance');
+                
+                if (area === '797') {
+                    pressureGroup.style.display = 'block';
+                    pressureCompliance.style.display = 'list-item';
+                    pressureCompliance.textContent = 'Air Pressure: +0.01 to +0.05" WC ✅';
+                    document.getElementById('pressureInput').value = '0.025';
+                } else if (area === '800') {
+                    pressureGroup.style.display = 'block';
+                    pressureCompliance.style.display = 'list-item';
+                    pressureCompliance.textContent = 'Air Pressure: -0.01 to -0.05" WC ✅';
+                    document.getElementById('pressureInput').value = '-0.025';
+                } else {
+                    pressureGroup.style.display = 'none';
+                    pressureCompliance.style.display = 'none';
+                }
+            });
+        }
+
+        function addResult(type, message) {
+            const resultsDiv = document.getElementById('uploadResults');
+            const time = new Date().toLocaleTimeString();
+            
+            resultsDiv.innerHTML += `
+                <div class="status ${type}">
+                    <strong>${message}</strong>
+                    <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">${time}</div>
+                </div>
+            `;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function initializeAPIs() {
+            try {
+                if (typeof gapi !== 'undefined') {
+                    await new Promise(resolve => {
+                        gapi.load('client', resolve);
+                    });
+                    await initializeGapiClient();
+                }
+                
+                if (typeof google !== 'undefined' && GOOGLE_CLIENT_ID) {
+                    initializeGisClient();
+                }
+                
+            } catch (error) {
+                addResult('error', `API initialization failed: ${error.message}`);
+            }
+        }
+
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    apiKey: GOOGLE_API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapi_loaded = true;
+                addResult('success', '✅ Google API client initialized');
+            } catch (error) {
+                addResult('error', `❌ GAPI initialization failed: ${error.message}`);
+            }
+        }
+
+        function initializeGisClient() {
+            try {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            addResult('error', `❌ Authentication failed: ${tokenResponse.error}`);
+                            return;
+                        }
+                        access_token = tokenResponse.access_token;
+                        addResult('success', '✅ Successfully authenticated with Google Drive');
+                        
+                        // Update UI
+                        document.getElementById('authStatus').className = 'status success';
+                        document.getElementById('authStatus').innerHTML = '<strong>🔐 Authentication Status:</strong> Connected to Google Drive - Ready to upload files';
+                        document.getElementById('authBtn').textContent = '✅ Authenticated';
+                        document.getElementById('authBtn').disabled = true;
+                        document.getElementById('generateBtn').disabled = false;
+                    },
+                });
+                gis_loaded = true;
+                addResult('success', '✅ Google Identity Services initialized');
+            } catch (error) {
+                addResult('error', `❌ GIS initialization failed: ${error.message}`);
+            }
+        }
+
+        function authenticateGoogleDrive() {
+            if (!gis_loaded) {
+                addResult('error', '❌ Google Identity Services not loaded');
+                return;
+            }
+            
+            addResult('info', '🔐 Starting authentication...');
+            
+            try {
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } catch (error) {
+                addResult('error', `❌ Authentication error: ${error.message}`);
+            }
+        }
+
+        function generateCompliantDocument() {
+            addResult('info', '📋 Generating compliant document...');
+            
+            // Get form values
+            const area = document.getElementById('areaSelect').value;
+            const temp = parseFloat(document.getElementById('tempInput').value);
+            const hum = parseFloat(document.getElementById('humInput').value);
+            const pressure = area !== '795' ? parseFloat(document.getElementById('pressureInput').value) : null;
+            const staff = document.getElementById('staffInput').value.trim();
+            
+            // Validate compliance
+            const tempOK = temp >= 68 && temp <= 77;
+            const humOK = hum <= 60;
+            let pressureOK = true;
+            
+            if (area === '797') {
+                pressureOK = pressure >= 0.01 && pressure <= 0.05;
+            } else if (area === '800') {
+                pressureOK = pressure >= -0.05 && pressure <= -0.01;
+            }
+            
+            const compliant = tempOK && humOK && pressureOK;
+            
+            if (!compliant) {
+                addResult('error', '❌ Data is not compliant - please adjust values');
+                return;
+            }
+            
+            // Generate document content
+            const areaNames = {
+                '795': 'Non-Sterile Compounding Area (USP <795>)',
+                '797': 'Sterile Compounding Area (USP <797>)',
+                '800': 'Hazardous Drug Compounding Area (USP <800>)'
+            };
+            
+            const areaColors = {
+                '795': '#27ae60',
+                '797': '#3498db', 
+                '800': '#e67e22'
+            };
+            
+            const timestamp = new Date().toLocaleString();
+            const today = new Date().toLocaleDateString();
+            
+            generatedDocument = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${areaNames[area]} Compliance Report</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 40px; 
+      line-height: 1.6; 
+      color: #2c3e50;
+    }
+    .header { 
+      text-align: center; 
+      border-bottom: 4px solid ${areaColors[area]}; 
+      padding-bottom: 25px; 
+      margin-bottom: 35px; 
+    }
+    .header h1 { 
+      color: ${areaColors[area]}; 
+      font-weight: 700; 
+      margin: 0; 
+      font-size: 28px; 
+    }
+    .header .subtitle {
+      font-size: 16px;
+      color: #7f8c8d;
+      margin-top: 10px;
+    }
+    .summary { 
+      background: #f8f9fa; 
+      padding: 15px; 
+      border-radius: 8px; 
+      margin: 20px 0; 
+      border-left: 4px solid ${areaColors[area]}; 
+      text-align: center;
+    }
+    .summary h3 {
+      color: ${areaColors[area]};
+      margin: 0 0 5px 0;
+      font-size: 16px;
+    }
+    .summary p {
+      margin: 0;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+    .record-card {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      margin: 15px 0;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .record-header {
+      background: ${areaColors[area]};
+      color: white;
+      padding: 15px 20px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .record-content {
+      padding: 20px;
+    }
+    .record-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .record-field {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid ${areaColors[area]};
+    }
+    .record-field strong {
+      display: block;
+      color: ${areaColors[area]};
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .record-field span {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .status-compliant {
+      background: #d4edda;
+      color: #155724;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: 600;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🧪 ${areaNames[area]}</h1>
+    <div class="subtitle">Environmental Monitoring & Compliance Report</div>
+    <p><strong>Generated:</strong> ${today} | <strong>By:</strong> ${staff}</p>
+  </div>
+  
+  <div class="summary">
+    <h3>📊 Summary</h3>
+    <p>Environmental monitoring data for ${areaNames[area]} - USP compliance tracking.</p>
+  </div>
+  
+  <div class="record-card">
+    <div class="record-header">
+      Compliance Record - ${timestamp}
+    </div>
+    <div class="record-content">
+      <div class="record-grid">
+        <div class="record-field">
+          <strong>Temperature</strong>
+          <span>${temp}°F</span>
+        </div>
+        <div class="record-field">
+          <strong>Humidity</strong>
+          <span>${hum}% RH</span>
+        </div>
+        ${pressure !== null ? `
+        <div class="record-field">
+          <strong>Air Pressure</strong>
+          <span>${pressure}" WC</span>
+        </div>
+        ` : ''}
+        <div class="record-field">
+          <strong>Recorded By</strong>
+          <span>${staff}</span>
+        </div>
+        <div class="record-field">
+          <strong>Compliance Status</strong>
+          <span class="status-compliant">✅ COMPLIANT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #ecf0f1; text-align: center; color: #7f8c8d; font-size: 12px;">
+    <p>This report was generated automatically by the Pharmacy Compounding Compliance Log system.</p>
+    <p>For questions or concerns regarding compliance, contact your Quality Assurance department.</p>
+  </div>
+</body>
+</html>`;
+            
+            // Show preview
+            document.getElementById('previewSection').style.display = 'block';
+            document.getElementById('documentPreview').textContent = generatedDocument.substring(0, 1000) + '...';
+            document.getElementById('uploadBtn').disabled = false;
+            
+            addResult('success', '✅ Compliant document generated successfully');
+            addResult('info', `📄 Document type: ${areaNames[area]} Report`);
+            addResult('info', `📊 Status: COMPLIANT (Temp: ${temp}°F, Humidity: ${hum}%${pressure !== null ? `, Pressure: ${pressure}" WC` : ''})`);
+        }
+
+        async function uploadDocument() {
+            if (!access_token) {
+                addResult('error', '❌ Please authenticate first');
+                return;
+            }
+            
+            if (!generatedDocument) {
+                addResult('error', '❌ Please generate a document first');
+                return;
+            }
+            
+            addResult('info', '📤 Uploading document to Google Drive...');
+            
+            const area = document.getElementById('areaSelect').value;
+            const areaName = area === '795' ? 'Non-Sterile' : area === '797' ? 'Sterile' : 'Hazardous';
+            const fileName = `${areaName}_USP_${area}_Report_${new Date().toISOString().split('T')[0]}_TEST.html`;
+            
+            try {
+                const metadata = {
+                    name: fileName,
+                    parents: [TARGET_FOLDER_ID]
+                };
+
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+                form.append('file', new Blob([generatedDocument], {type: 'text/html'}));
+
+                const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${access_token}`
+                    },
+                    body: form
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    addResult('success', `✅ Document uploaded successfully!`);
+                    addResult('success', `📄 File name: ${result.name}`);
+                    addResult('success', `📁 File ID: ${result.id}`);
+                    addResult('info', `🔗 Check your folder: https://drive.google.com/drive/folders/${TARGET_FOLDER_ID}`);
+                    
+                    // Reset for next test
+                    document.getElementById('uploadBtn').disabled = true;
+                    generatedDocument = null;
+                    document.getElementById('previewSection').style.display = 'none';
+                    document.getElementById('generateBtn').disabled = false;
+                    
+                } else {
+                    const errorText = await response.text();
+                    addResult('error', `❌ Upload failed: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                addResult('error', `❌ Upload error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
