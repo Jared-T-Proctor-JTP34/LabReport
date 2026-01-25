@@ -54,8 +54,12 @@
 </head>
 <body>
     <div class="test-container">
-        <h1>🔍 Google Drive Connectivity Test</h1>
-        <p>This tool will help you test your Google Drive integration setup.</p>
+        <h1>🔍 Google Drive Troubleshooting Tool</h1>
+        <p>This tool will help diagnose why Google Drive isn't working in your application.</p>
+        
+        <div class="status error">
+            <strong>⚠️ Current Issue:</strong> Google Drive integration not working
+        </div>
         
         <div id="configStatus" class="status info">
             <strong>Configuration Status:</strong> Checking...
@@ -66,9 +70,11 @@
             <pre id="configDetails">Loading...</pre>
         </div>
         
-        <button onclick="testGoogleAPIs()">Test Google APIs Loading</button>
-        <button onclick="testAuthentication()">Test Authentication</button>
-        <button onclick="testFolderAccess()">Test Folder Access</button>
+        <button onclick="testGoogleAPIs()">🔍 Test API Loading</button>
+        <button onclick="testAuthentication()">🔐 Test Authentication</button>
+        <button onclick="testFolderAccess()">📁 Test Folder Access</button>
+        <button onclick="runFullDiagnostic()">🚨 Run Full Diagnostic</button>
+        <button onclick="testFromCurrentDomain()">🌐 Test Current Domain</button>
         
         <div id="testResults"></div>
         
@@ -278,6 +284,167 @@ Current Domain: ${window.location.origin}
             } catch (error) {
                 addTestResult('Folder Access Test', 'error', `❌ Error accessing folder: ${error.message}`);
             }
+        }
+    </script>
+
+    <script>
+        // Additional diagnostic functions
+        function runFullDiagnostic() {
+            addTestResult('🚨 Full Diagnostic', 'info', 'Running comprehensive Google Drive diagnostic...');
+            
+            // Clear previous results
+            document.getElementById('testResults').innerHTML = '';
+            
+            // Test 1: Configuration
+            addTestResult('1️⃣ Configuration Check', 'info', 'Checking credentials...');
+            setTimeout(() => {
+                const clientIdOK = !!GOOGLE_CLIENT_ID;
+                const apiKeyOK = !!GOOGLE_API_KEY;
+                const folderIdOK = !!TARGET_FOLDER_ID;
+                
+                addTestResult('Client ID', clientIdOK ? 'success' : 'error', 
+                    clientIdOK ? '✅ Configured' : '❌ Missing');
+                addTestResult('API Key', apiKeyOK ? 'success' : 'error', 
+                    apiKeyOK ? '✅ Configured' : '❌ Missing');
+                addTestResult('Folder ID', folderIdOK ? 'success' : 'error', 
+                    folderIdOK ? '✅ Configured' : '❌ Missing');
+            }, 100);
+            
+            // Test 2: Domain Check
+            setTimeout(() => {
+                addTestResult('2️⃣ Domain Check', 'info', 'Checking current domain...');
+                const currentDomain = window.location.origin;
+                const isLocalhost = currentDomain.includes('localhost') || currentDomain.includes('127.0.0.1');
+                const isGitHub = currentDomain.includes('github.io');
+                const isCustomDomain = currentDomain.includes('labreporttool.xyz');
+                
+                addTestResult('Current Domain', 'info', currentDomain);
+                
+                if (isLocalhost) {
+                    addTestResult('Domain Issue', 'error', '❌ localhost not supported by Google OAuth2');
+                } else if (isGitHub) {
+                    addTestResult('Domain Status', 'warning', '⚠️ GitHub Pages - needs authorization');
+                } else if (isCustomDomain) {
+                    addTestResult('Domain Status', 'success', '✅ Custom domain detected');
+                } else {
+                    addTestResult('Domain Status', 'warning', '⚠️ Unknown domain - may need authorization');
+                }
+            }, 500);
+            
+            // Test 3: API Loading
+            setTimeout(() => {
+                addTestResult('3️⃣ API Loading', 'info', 'Testing Google APIs...');
+                const gapiLoaded = typeof gapi !== 'undefined';
+                const googleLoaded = typeof google !== 'undefined';
+                
+                addTestResult('GAPI Library', gapiLoaded ? 'success' : 'error', 
+                    gapiLoaded ? '✅ Loaded' : '❌ Failed to load');
+                addTestResult('Google Identity', googleLoaded ? 'success' : 'error', 
+                    googleLoaded ? '✅ Loaded' : '❌ Failed to load');
+                
+                if (!gapiLoaded || !googleLoaded) {
+                    addTestResult('API Loading Issue', 'error', 
+                        '❌ Google APIs failed to load. Check internet connection and domain restrictions.');
+                }
+            }, 1000);
+            
+            // Test 4: Initialization
+            setTimeout(() => {
+                addTestResult('4️⃣ Initialization', 'info', 'Testing API initialization...');
+                addTestResult('GAPI Client', gapi_loaded ? 'success' : 'error', 
+                    gapi_loaded ? '✅ Initialized' : '❌ Failed to initialize');
+                addTestResult('GIS Client', gis_loaded ? 'success' : 'error', 
+                    gis_loaded ? '✅ Initialized' : '❌ Failed to initialize');
+            }, 1500);
+            
+            // Test 5: Common Issues
+            setTimeout(() => {
+                addTestResult('5️⃣ Common Issues Check', 'info', 'Checking for common problems...');
+                
+                // Check for CORS issues
+                if (window.location.protocol === 'file:') {
+                    addTestResult('CORS Issue', 'error', '❌ Cannot run from file:// protocol');
+                }
+                
+                // Check for HTTPS
+                if (window.location.protocol !== 'https:' && !window.location.hostname.includes('localhost')) {
+                    addTestResult('HTTPS Issue', 'error', '❌ Google OAuth2 requires HTTPS');
+                }
+                
+                // Check API key format
+                if (GOOGLE_API_KEY && !GOOGLE_API_KEY.startsWith('AIza')) {
+                    addTestResult('API Key Format', 'error', '❌ API Key format looks incorrect');
+                }
+                
+                // Check Client ID format
+                if (GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com')) {
+                    addTestResult('Client ID Format', 'error', '❌ Client ID format looks incorrect');
+                }
+            }, 2000);
+            
+            // Final recommendations
+            setTimeout(() => {
+                addTestResult('6️⃣ Recommendations', 'info', 'Generating recommendations...');
+                
+                let recommendations = [];
+                
+                if (!GOOGLE_API_KEY) {
+                    recommendations.push('❌ Add Google API Key to the application');
+                }
+                
+                if (window.location.origin.includes('localhost')) {
+                    recommendations.push('❌ Deploy to a real domain (localhost not supported)');
+                }
+                
+                if (!gapi_loaded || !gis_loaded) {
+                    recommendations.push('❌ Check Google Cloud Console API restrictions');
+                    recommendations.push('❌ Verify domain is authorized in OAuth2 settings');
+                }
+                
+                if (recommendations.length === 0) {
+                    addTestResult('Status', 'success', '✅ Configuration looks good! Try the authentication test.');
+                } else {
+                    recommendations.forEach((rec, index) => {
+                        addTestResult(`Fix ${index + 1}`, 'error', rec);
+                    });
+                }
+            }, 2500);
+        }
+
+        function testFromCurrentDomain() {
+            addTestResult('🌐 Domain Test', 'info', `Testing from: ${window.location.origin}`);
+            
+            // Check if we're on the right domain
+            const currentDomain = window.location.origin;
+            
+            if (currentDomain.includes('localhost') || currentDomain.includes('127.0.0.1')) {
+                addTestResult('Domain Issue', 'error', 
+                    '❌ localhost is not supported by Google OAuth2. You need to test from a real domain.');
+                addTestResult('Solution', 'info', 
+                    '💡 Deploy to GitHub Pages or your custom domain to test Google Drive integration.');
+                return;
+            }
+            
+            if (currentDomain.includes('github.io')) {
+                addTestResult('GitHub Pages', 'warning', 
+                    '⚠️ Testing from GitHub Pages. Make sure this domain is authorized in Google Cloud Console.');
+            }
+            
+            if (currentDomain.includes('labreporttool.xyz')) {
+                addTestResult('Custom Domain', 'success', 
+                    '✅ Testing from custom domain. This should work if properly configured.');
+            }
+            
+            // Test API loading from current domain
+            setTimeout(() => {
+                if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
+                    addTestResult('APIs from Domain', 'success', 
+                        '✅ Google APIs loaded successfully from this domain');
+                } else {
+                    addTestResult('APIs from Domain', 'error', 
+                        '❌ Google APIs failed to load from this domain');
+                }
+            }, 1000);
         }
     </script>
 </body>
