@@ -36,9 +36,9 @@ class GoogleDriveService:
     
     def get_credentials(self):
         """Get credentials from file or environment variables"""
-        # Try local file first (for development)
+        # Try local file first (same directory as script)
         if os.path.exists(CONFIG['SERVICE_ACCOUNT_FILE']):
-            print(f"📁 Using local service account file: {CONFIG['SERVICE_ACCOUNT_FILE']}")
+            print(f"📁 Using service account file: {CONFIG['SERVICE_ACCOUNT_FILE']}")
             return service_account.Credentials.from_service_account_file(
                 CONFIG['SERVICE_ACCOUNT_FILE'],
                 scopes=CONFIG['SCOPES']
@@ -67,7 +67,18 @@ class GoogleDriveService:
             )
         
         else:
-            raise Exception("No service account credentials found. Please provide either service-account-key.json file or environment variables.")
+            project_dir = os.path.dirname(os.path.abspath(__file__))
+            raise Exception(f"""No service account credentials found. Please provide credentials using one of these methods:
+
+1. LOCAL DEVELOPMENT: Place service-account-key.json in project directory:
+   {CONFIG['SERVICE_ACCOUNT_FILE']}
+   
+2. FOR RENDER: Set environment variables:
+   - GOOGLE_PROJECT_ID
+   - GOOGLE_PRIVATE_KEY  
+   - GOOGLE_CLIENT_EMAIL
+   
+💡 Make sure service-account-key.json is in: {project_dir}""")
     
     def initialize_service(self):
         """Initialize Google Drive service with service account"""

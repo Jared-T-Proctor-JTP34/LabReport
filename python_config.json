@@ -1,0 +1,35 @@
+{
+  "python_installation": {
+    "path": "C:\\Users\\jared\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0",
+    "version": "3.13.9",
+    "executable": "C:\\Users\\jared\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe",
+    "scripts_dir": "C:\\Users\\jared\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\Scripts",
+    "description": "Python 3.13.9 64-bit Windows Store installation for Pharmacy Compliance Project",
+    "type": "Windows Store Python"
+  },
+  "project_settings": {
+    "name": "Pharmacy Compliance Lab Reports",
+    "python_required": "3.8+",
+    "main_script": "BACKEND_SERVICE_ACCOUNT.py",
+    "test_script": "test_google_drive_connectivity.py",
+    "requirements_file": "requirements.txt"
+  },
+  "launchers": {
+    "python": "python_launcher.bat",
+    "pip": "pip_launcher.bat",
+    "backend": "python_launcher.bat BACKEND_SERVICE_ACCOUNT.py",
+    "test": "python_launcher.bat test_google_drive_connectivity.py"
+  },
+  "environment_variables": {
+    "PYTHON_PATH": "C:\\Users\\jared\\AppData\\Local\\Microsoft\\WindowsApps",
+    "PATH_ADDITIONS": [
+      "C:\\Users\\jared\\AppData\\Local\\Microsoft\\WindowsApps"
+    ]
+  },
+  "status": {
+    "installation_verified": true,
+    "modules_available": ["flask", "google.oauth2.service_account", "googleapiclient.discovery"],
+    "project_files_found": true,
+    "launchers_working": true
+  }
+}
