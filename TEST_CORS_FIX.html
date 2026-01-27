@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Fix Test</title>
+</head>
+<body>
+    <h1>🔧 CORS Fix Test</h1>
+    
+    <div id="results">
+        <p>Testing backend connectivity...</p>
+    </div>
+    
+    <button onclick="testBackend()">🧪 Test Backend Connection</button>
+    
+    <script>
+        async function testBackend() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>🔄 Testing backend connections...</p>';
+            
+            const urls = [
+                'https://pharmacy-compliance-backend.onrender.com/status',
+                'https://pharmacy-compliance-backend.onrender.com/health',
+                'https://pharmacy-compliance-backend.onrender.com/'
+            ];
+            
+            for (const url of urls) {
+                try {
+                    console.log(`Testing: ${url}`);
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        results.innerHTML += `<p>✅ ${url} - Status: ${response.status}</p>`;
+                        results.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } else {
+                        results.innerHTML += `<p>❌ ${url} - Status: ${response.status}</p>`;
+                    }
+                } catch (error) {
+                    results.innerHTML += `<p>❌ ${url} - Error: ${error.message}</p>`;
+                    
+                    if (error.message.includes('CORS')) {
+                        results.innerHTML += `<p>🔧 CORS Error detected - backend needs CORS configuration</p>`;
+                    }
+                }
+            }
+            
+            results.innerHTML += '<p>🏁 Test completed</p>';
+        }
+        
+        // Auto-run test on page load
+        window.onload = testBackend;
+    </script>
+</body>
+</html>

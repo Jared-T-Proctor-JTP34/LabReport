@@ -569,6 +569,12 @@ const CONFIG = {
   // Dynamic backend URL based on environment
   BACKEND_URL: isDevelopment ? 'http://localhost:8001' : 'https://pharmacy-compliance-backend.onrender.com',
   
+  // Fallback URLs if primary backend fails
+  FALLBACK_URLS: [
+    'https://pharmacy-compliance-backend-simple.onrender.com',
+    'https://labreport-backend.onrender.com'
+  ],
+  
   // Service Account Configuration (no frontend Google API needed)
   USE_SERVICE_ACCOUNT: true,
   TARGET_EMAIL: 'labreporting1177@gmail.com',
@@ -617,31 +623,67 @@ async function checkBackendStatus() {
   console.log(`🔍 Environment check: isDevelopment=${isDevelopment}, isProduction=${isProduction}`);
   console.log(`🌐 Current hostname: ${location.hostname}`);
   
-  // Check if Render cloud backend is available
-  try {
-    console.log(`🔄 Attempting to connect to Render backend: ${CONFIG.BACKEND_URL}/status`);
-    const response = await fetch(`${CONFIG.BACKEND_URL}/status`);
-    if (response.ok) {
-      const status = await response.json();
-      state.backend_available = true;
+  // Try primary backend URL first
+  const urlsToTry = [CONFIG.BACKEND_URL, ...CONFIG.FALLBACK_URLS];
+  
+  for (let i = 0; i < urlsToTry.length; i++) {
+    const backendUrl = urlsToTry[i];
+    console.log(`🔄 Attempting to connect to backend ${i + 1}/${urlsToTry.length}: ${backendUrl}/status`);
+    
+    try {
+      const response = await fetch(`${backendUrl}/status`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'omit'
+      });
       
-      if (status.drive_service_ready) {
-        updateSystemStatus('connected', 'Render Cloud Connected ✅', 
-          `Secure cloud backend ready - Automatic uploads to ${CONFIG.TARGET_EMAIL}`);
-        console.log('✅ Render backend connected with Google Drive ready');
+      if (response.ok) {
+        const status = await response.json();
+        state.backend_available = true;
+        CONFIG.BACKEND_URL = backendUrl; // Update to working URL
+        
+        console.log(`✅ Connected to backend: ${backendUrl}`);
+        
+        if (status.drive_service_ready) {
+          updateSystemStatus('connected', 'Render Cloud Connected ✅', 
+            `Secure cloud backend ready - Automatic uploads to ${CONFIG.TARGET_EMAIL}`);
+          console.log('✅ Backend connected with Google Drive ready');
+        } else {
+          updateSystemStatus('warning', 'Backend Connected (Drive Setup Needed)', 
+            'Cloud backend running but Google Drive setup incomplete');
+          console.log('⚠️ Backend connected but Google Drive service not ready');
+        }
+        return true;
       } else {
-        updateSystemStatus('warning', 'Render Connected (Drive Setup Needed)', 
-          'Cloud backend running but Google Drive setup incomplete');
-        console.log('⚠️ Render backend connected but Google Drive service not ready');
+        console.log(`❌ Backend ${backendUrl} returned status: ${response.status}`);
       }
-      return true;
+    } catch (error) {
+      console.log(`❌ Failed to connect to ${backendUrl}:`, error.message);
+      
+      // Check if it's a CORS error
+      if (error.message.includes('CORS') || error.message.includes('fetch')) {
+        console.log('🔧 CORS or network error detected - backend may need CORS configuration');
+      }
     }
-    throw new Error('Backend service not responding');
-  } catch (error) {
-    state.backend_available = false;
-    updateSystemStatus('warning', 'Render Backend Offline', 
-      'Cloud backend unavailable - Reports will download locally until service is restored');
-    console.log('⚠️ Render cloud backend not available:', error.message);
+  }
+  
+  // All backends failed
+  state.backend_available = false;
+  
+  if (isProduction) {
+    updateSystemStatus('warning', 'Backend Offline - Using Direct Google API', 
+      'Cloud backend unavailable - Using direct Google Drive integration');
+    console.log('⚠️ All backends unavailable - falling back to direct Google API');
+    
+    // Try to initialize Google API as fallback
+    return await initializeGoogleAPI();
+  } else {
+    updateSystemStatus('warning', 'Backend Offline', 
+      'Local backend not running - Reports will download locally');
+    console.log('⚠️ Local backend not available');
     return false;
   }
 }
