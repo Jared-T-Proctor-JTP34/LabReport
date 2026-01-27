@@ -338,12 +338,12 @@ th {
   <!-- Login Form -->
   <div style="margin-top:25px;">
     <label style="font-weight:600;color:#2c3e50;">Username</label>
-    <input type="text" id="loginUser" onkeypress="handleLoginKeyPress(event)" style="margin-bottom:15px;">
+    <input type="text" id="loginUser" onkeypress="window.handleLoginKeyPress(event)" style="margin-bottom:15px;">
     
     <label style="font-weight:600;color:#2c3e50;">Password</label>
-    <input type="password" id="loginPass" onkeypress="handleLoginKeyPress(event)" style="margin-bottom:20px;">
+    <input type="password" id="loginPass" onkeypress="window.handleLoginKeyPress(event)" style="margin-bottom:20px;">
     
-    <button onclick="login()" style="background:#3498db;padding:12px 20px;font-size:16px;font-weight:600;">
+    <button onclick="window.login()" style="background:#3498db;padding:12px 20px;font-size:16px;font-weight:600;">
       🚀 Access Compliance System
     </button>
   </div>
@@ -367,7 +367,7 @@ th {
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:15px 0;border-bottom:2px solid #ecf0f1;">
   <h1 style="margin:0;">Pharmacy Compounding Compliance Log</h1>
   <div>
-    <button onclick="logout()" style="background:#e74c3c;padding:10px 20px;">Logout</button>
+    <button onclick="window.logout()" style="background:#e74c3c;padding:10px 20px;">Logout</button>
   </div>
 </div>
 
@@ -391,9 +391,9 @@ th {
 
 <!-- Tabbed Interface -->
 <div class="tab-nav">
-  <button class="tab-button non-sterile active" onclick="switchTab('non-sterile')">🧪 Non-Sterile (&lt;795&gt;)</button>
-  <button class="tab-button sterile" onclick="switchTab('sterile')">🔬 Sterile (&lt;797&gt;)</button>
-  <button class="tab-button hazardous" onclick="switchTab('hazardous')">⚠️ Hazardous (&lt;800&gt;)</button>
+  <button class="tab-button non-sterile active" onclick="window.switchTab('non-sterile')">🧪 Non-Sterile (&lt;795&gt;)</button>
+  <button class="tab-button sterile" onclick="window.switchTab('sterile')">🔬 Sterile (&lt;797&gt;)</button>
+  <button class="tab-button hazardous" onclick="window.switchTab('hazardous')">⚠️ Hazardous (&lt;800&gt;)</button>
 </div>
 
 <!-- Non-Sterile USP <795> Tab -->
@@ -422,13 +422,13 @@ th {
     </div>
   </div>
   
-  <button onclick="recordData('795')" style="background:#27ae60;padding:15px;font-size:16px;">
+  <button onclick="window.recordData('795')" style="background:#27ae60;padding:15px;font-size:16px;">
     📊 Record & Generate Report
   </button>
   
   <!-- History Section -->
   <div class="history-section">
-    <div class="history-header" onclick="toggleHistory('795')">
+    <div class="history-header" onclick="window.toggleHistory('795')">>
       <h3>📊 Complete History</h3>
       <span class="history-toggle" id="toggle795">▼</span>
     </div>
@@ -475,13 +475,13 @@ th {
     </div>
   </div>
   
-  <button onclick="recordData('797')" style="background:#3498db;padding:15px;font-size:16px;">
+  <button onclick="window.recordData('797')" style="background:#3498db;padding:15px;font-size:16px;">
     📊 Record & Generate Report
   </button>
   
   <!-- History Section -->
   <div class="history-section">
-    <div class="history-header" onclick="toggleHistory('797')">
+    <div class="history-header" onclick="window.toggleHistory('797')">>
       <h3>📊 Complete History</h3>
       <span class="history-toggle" id="toggle797">▼</span>
     </div>
@@ -528,13 +528,13 @@ th {
     </div>
   </div>
   
-  <button onclick="recordData('800')" style="background:#e67e22;padding:15px;font-size:16px;">
+  <button onclick="window.recordData('800')" style="background:#e67e22;padding:15px;font-size:16px;">
     📊 Record & Generate Report
   </button>
   
   <!-- History Section -->
   <div class="history-section">
-    <div class="history-header" onclick="toggleHistory('800')">
+    <div class="history-header" onclick="window.toggleHistory('800')">>
       <h3>📊 Complete History</h3>
       <span class="history-toggle" id="toggle800">▼</span>
     </div>
@@ -958,16 +958,6 @@ function updateSystemStatus(status, text, details) {
         statusSymbol.textContent = '🔄';
         statusSymbol.title = 'Initializing Render cloud connection...';
     }
-        statusSymbol.title = 'Connection error - Check backend service or Google API';
-        break;
-      case 'info':
-        statusSymbol.textContent = '🔄';
-        statusSymbol.title = 'Connecting to services...';
-        break;
-      default:
-        statusSymbol.textContent = '🔄';
-        statusSymbol.title = 'Initializing system...';
-    }
   }
 }
 
@@ -1176,14 +1166,14 @@ const utils = {
   }
 };
 
-// Handle Enter key press on login form
-function handleLoginKeyPress(event) {
+// Handle Enter key press on login form - Global scope
+window.handleLoginKeyPress = function(event) {
   if (event.key === 'Enter') {
-    login();
+    window.login();
   }
 }
 
-function login() {
+window.login = function() {
   const user = document.getElementById("loginUser").value.trim().toLowerCase();
   const pass = document.getElementById("loginPass").value;
   const error = document.getElementById("loginError");
@@ -1191,22 +1181,22 @@ function login() {
   if (CONFIG.CREDENTIALS[user] === pass) {
     sessionStorage.setItem("loggedIn", "true");
     sessionStorage.setItem("user", user);
-    showApp();
+    window.showApp();
   } else {
     error.style.display = "block";
     error.textContent = "Invalid username or password";
   }
 }
 
-// Logout function
-function logout() {
+// Logout function - Global scope
+window.logout = function() {
   sessionStorage.clear();
   document.getElementById("loginScreen").style.display = "block";
   document.getElementById("app").style.display = "none";
 }
 
-// Show app
-function showApp() {
+// Show app - Global scope
+window.showApp = function() {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("app").style.display = "block";
 }
@@ -1218,8 +1208,8 @@ function checkLogin() {
   }
 }
 
-// Tab switching
-function switchTab(tabName) {
+// Tab switching - Global scope
+window.switchTab = function(tabName) {
   const tabs = document.querySelectorAll('.tab-content');
   tabs.forEach(tab => tab.classList.remove('active'));
   
@@ -1232,7 +1222,7 @@ function switchTab(tabName) {
   if (activeBtn) activeBtn.classList.add('active');
 }
 
-async function recordData(area) {
+window.recordData = async function(area) {
   const temp = parseFloat(document.getElementById(`temp${area}`).value);
   const hum = parseFloat(document.getElementById(`hum${area}`).value);
   const staff = document.getElementById(`staff${area}`).value.trim();
@@ -1311,8 +1301,8 @@ async function recordData(area) {
   }
 }
 
-// History toggle functionality
-function toggleHistory(area) {
+// History toggle functionality - Global scope
+window.toggleHistory = function(area) {
   const content = document.getElementById(`history${area}`);
   const toggle = document.getElementById(`toggle${area}`);
   

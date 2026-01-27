@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript Fixes Test</title>
+</head>
+<body>
+    <h1>JavaScript Fixes Test</h1>
+    
+    <div>
+        <h2>Test 1: Login Function</h2>
+        <input type="text" id="loginUser" value="admin">
+        <input type="password" id="loginPass" value="pharmacy123">
+        <button onclick="window.login()">Test Login</button>
+        <div id="loginError" style="display:none;color:red;"></div>
+    </div>
+    
+    <div>
+        <h2>Test 2: Switch Tab Function</h2>
+        <button onclick="window.switchTab('test')">Test Switch Tab</button>
+    </div>
+    
+    <div>
+        <h2>Test 3: Toggle History Function</h2>
+        <button onclick="window.toggleHistory('795')">Test Toggle History</button>
+    </div>
+
+    <script>
+        // Minimal CONFIG for testing
+        const CONFIG = {
+            CREDENTIALS: {
+                'admin': 'pharmacy123'
+            }
+        };
+        
+        // Test functions (simplified versions)
+        window.login = function() {
+            console.log('✅ Login function called successfully');
+            const user = document.getElementById("loginUser").value.trim().toLowerCase();
+            const pass = document.getElementById("loginPass").value;
+            
+            if (CONFIG.CREDENTIALS[user] === pass) {
+                console.log('✅ Login successful');
+                alert('Login successful!');
+            } else {
+                console.log('❌ Login failed');
+                alert('Login failed!');
+            }
+        }
+        
+        window.switchTab = function(tabName) {
+            console.log('✅ SwitchTab function called successfully with:', tabName);
+            alert('SwitchTab called with: ' + tabName);
+        }
+        
+        window.toggleHistory = function(area) {
+            console.log('✅ ToggleHistory function called successfully with:', area);
+            alert('ToggleHistory called with: ' + area);
+        }
+        
+        console.log('🧪 Test page loaded - all functions should be accessible');
+    </script>
+</body>
+</html>
