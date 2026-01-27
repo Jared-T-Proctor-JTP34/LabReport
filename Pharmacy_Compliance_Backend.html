@@ -581,6 +581,9 @@ const CONFIG = {
   SERVICE_ACCOUNT_EMAIL: 'pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com',
   TARGET_FOLDER_ID: '1C-5yxY7r0DafqWKrOpq9gtJrOrcCU0Sc',
   
+  // Google API Configuration (fallback for direct API access)
+  GOOGLE_CLIENT_ID: '113380403214174229428-your-client-id.apps.googleusercontent.com',
+  
   // Environment info
   ENVIRONMENT: isDevelopment ? 'development' : 'production',
   
@@ -648,12 +651,12 @@ async function checkBackendStatus() {
         console.log(`✅ Connected to backend: ${backendUrl}`);
         
         if (status.drive_service_ready) {
-          updateSystemStatus('connected', 'Render Cloud Connected ✅', 
-            `Secure cloud backend ready - Automatic uploads to ${CONFIG.TARGET_EMAIL}`);
+          updateSystemStatus('connected', 'Cloud Backend Connected ✅', 
+            `Automatic uploads enabled - Reports saved to ${CONFIG.TARGET_EMAIL}`);
           console.log('✅ Backend connected with Google Drive ready');
         } else {
-          updateSystemStatus('warning', 'Backend Connected (Drive Setup Needed)', 
-            'Cloud backend running but Google Drive setup incomplete');
+          updateSystemStatus('warning', 'Backend Connected (Local Download Mode)', 
+            'Backend running but Google Drive not configured - Reports will download to your device');
           console.log('⚠️ Backend connected but Google Drive service not ready');
         }
         return true;
@@ -674,12 +677,12 @@ async function checkBackendStatus() {
   state.backend_available = false;
   
   if (isProduction) {
-    updateSystemStatus('warning', 'Backend Offline - Using Direct Google API', 
-      'Cloud backend unavailable - Using direct Google Drive integration');
-    console.log('⚠️ All backends unavailable - falling back to direct Google API');
+    updateSystemStatus('warning', 'Backend Offline - Local Download Mode', 
+      'Cloud backend unavailable - Reports will download to your device');
+    console.log('⚠️ All backends unavailable - using local download mode');
     
-    // Try to initialize Google API as fallback
-    return await initializeGoogleAPI();
+    // Skip Google API fallback for now - just use local download
+    return false;
   } else {
     updateSystemStatus('warning', 'Backend Offline', 
       'Local backend not running - Reports will download locally');

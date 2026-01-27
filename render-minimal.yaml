@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: pharmacy-compliance-backend
+    env: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install flask flask-cors
+    startCommand: python minimal_backend.py
+    # No environment variables needed for minimal version
