@@ -296,6 +296,9 @@ th {
 
 <body>
 
+<!-- Status Message Area -->
+<div id="statusMessage" style="display:none;position:fixed;top:20px;right:20px;padding:15px 20px;border-radius:8px;font-weight:600;z-index:1000;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+
 <!-- Login Screen -->
 <div id="loginScreen" style="max-width:500px;margin:60px auto;padding:30px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
   <div style="text-align:center;margin-bottom:25px;">
@@ -1068,6 +1071,20 @@ function downloadFile(fileName, content) {
   window.URL.revokeObjectURL(url);
 }
 
+// PDF text cleaning function
+function cleanTextForPDF(text) {
+  return text
+    .replace(/°/g, ' degrees ')
+    .replace(/≤/g, ' or less than ')
+    .replace(/≥/g, ' or greater than ')
+    .replace(/±/g, ' plus/minus ')
+    .replace(/✓/g, 'PASS')
+    .replace(/✗/g, 'FAIL')
+    .replace(/🧪|📊|📋|📝|⚠️|✅/g, '')
+    .replace(/"/g, ' inches')
+    .trim();
+}
+
 function generateAreaPDF(area, data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -1083,9 +1100,9 @@ function generateAreaPDF(area, data) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont(undefined, 'bold');
-  doc.text('🧪 Pharmacy Compounding Compliance Report', 20, 15);
+  doc.text(cleanTextForPDF('Pharmacy Compounding Compliance Report'), 20, 15);
   doc.setFontSize(12);
-  doc.text(CONFIG.AREA_NAMES[area], 20, 22);
+  doc.text(cleanTextForPDF(CONFIG.AREA_NAMES[area]), 20, 22);
   
   // Report info
   doc.setTextColor(...textColor);
@@ -1105,11 +1122,11 @@ function generateAreaPDF(area, data) {
   doc.setTextColor(...primaryColor);
   doc.setFontSize(14);
   doc.setFont(undefined, 'bold');
-  doc.text('📊 Compliance Summary', 20, yPos + 8);
+  doc.text('COMPLIANCE SUMMARY', 20, yPos + 8);
   doc.setTextColor(...textColor);
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  doc.text(`Total: ${totalRecords} | Rate: ${complianceRate}% | Compliant: ${compliantRecords}`, 20, yPos + 15);
+  doc.text(`Total Records: ${totalRecords} | Compliance Rate: ${complianceRate}% | Compliant: ${compliantRecords}`, 20, yPos + 15);
   
   yPos += 35;
   
@@ -1117,21 +1134,21 @@ function generateAreaPDF(area, data) {
   doc.setTextColor(...primaryColor);
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
-  doc.text('📋 USP Requirements', 20, yPos);
+  doc.text('USP REQUIREMENTS', 20, yPos);
   doc.setTextColor(...textColor);
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
   yPos += 8;
-  doc.text('• Temperature: 68-77°F', 25, yPos);
+  doc.text('- Temperature: 68-77 degrees F', 25, yPos);
   yPos += 5;
-  doc.text('• Humidity: ≤60% RH', 25, yPos);
+  doc.text('- Humidity: 60% RH or less', 25, yPos);
   yPos += 5;
   
   if (area === '797') {
-    doc.text('• Air Pressure: +0.01 to +0.05 inches WC (positive)', 25, yPos);
+    doc.text('- Air Pressure: +0.01 to +0.05 inches WC (positive)', 25, yPos);
     yPos += 5;
   } else if (area === '800') {
-    doc.text('• Air Pressure: -0.01 to -0.05 inches WC (negative)', 25, yPos);
+    doc.text('- Air Pressure: -0.01 to -0.05 inches WC (negative)', 25, yPos);
     yPos += 5;
   }
   
@@ -1141,7 +1158,7 @@ function generateAreaPDF(area, data) {
     doc.setTextColor(...primaryColor);
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text('📝 Recent Records (Last 5)', 20, yPos);
+    doc.text('RECENT RECORDS (Last 5)', 20, yPos);
     yPos += 10;
     
     const recentRecords = data.slice(-5).reverse();
@@ -1152,10 +1169,10 @@ function generateAreaPDF(area, data) {
       doc.setFontSize(8);
       
       const date = new Date(entry.timestamp).toLocaleDateString();
-      const status = entry.compliant ? '✓' : '✗';
+      const status = entry.compliant ? 'PASS' : 'FAIL';
       const pressure = entry.pressure !== null ? ` | ${entry.pressure}"WC` : '';
       
-      doc.text(`${date} | ${entry.temp}°F | ${entry.hum}%RH${pressure} | ${entry.staff} | ${status}`, 20, yPos);
+      doc.text(`${date} | ${entry.temp}F | ${entry.hum}%RH${pressure} | ${entry.staff} | ${status}`, 20, yPos);
       yPos += 6;
     });
   }
@@ -1276,13 +1293,20 @@ window.recordData = async function(area) {
   if (area === '797' || area === '800') {
     pressure = parseFloat(document.getElementById(`pressure${area}`).value);
     if (isNaN(pressure)) {
-      alert("Please enter air pressure reading");
+      // Highlight missing pressure field and show status message
+      document.getElementById(`pressure${area}`).style.borderColor = '#dc3545';
+      showStatusMessage("Please enter air pressure reading", 'error');
       return;
     }
   }
   
   if (isNaN(temp) || isNaN(hum) || !staff) {
-    alert("Please fill in all required fields");
+    // Highlight missing fields and show status message
+    if (isNaN(temp)) document.getElementById(`temp${area}`).style.borderColor = '#dc3545';
+    if (isNaN(hum)) document.getElementById(`hum${area}`).style.borderColor = '#dc3545';
+    if (!staff) document.getElementById(`staff${area}`).style.borderColor = '#dc3545';
+    
+    showStatusMessage("Please fill in all required fields", 'error');
     return;
   }
   
@@ -1335,14 +1359,11 @@ window.recordData = async function(area) {
   const cleaningInfo = entry.cleaningTasks.length > 0 ? `\nCleaning: ${entry.cleaningTasks.join(', ')}` : '';
   const pressureInfo = pressure !== null ? `, Pressure: ${pressure}" WC` : '';
   
+  // Show status message instead of popup
   if (!compliant) {
-    let requirements = '68-77°F, ≤60% RH';
-    if (area === '797') requirements += ', +0.01 to +0.05" WC';
-    if (area === '800') requirements += ', -0.01 to -0.05" WC';
-    
-    alert(`⚠️ NON-COMPLIANT READING!\n\nRequired: ${requirements}\nRecorded: ${temp}°F, ${hum}% RH${pressureInfo}${cleaningInfo}\n\nReport saved: ${uploadMethod}\nCORRECTIVE ACTION REQUIRED`);
+    showStatusMessage(`NON-COMPLIANT reading recorded. Report saved: ${uploadMethod}. CORRECTIVE ACTION REQUIRED.`, 'warning', 6000);
   } else {
-    alert(`✅ Compliant reading recorded!\n${temp}°F, ${hum}% RH${pressureInfo}${cleaningInfo}\n\nReport saved: ${uploadMethod}`);
+    showStatusMessage(`Compliant reading recorded! Report saved: ${uploadMethod}`, 'success', 4000);
   }
 }
 
@@ -1417,8 +1438,63 @@ function loadData() {
   });
 }
 
-// Initialize system - no Google API needed with service account
+// Show status message instead of popup
+function showStatusMessage(message, type = 'info', duration = 4000) {
+  const statusDiv = document.getElementById('statusMessage');
+  if (!statusDiv) return;
+  
+  statusDiv.textContent = message;
+  statusDiv.style.display = 'block';
+  
+  // Set colors based on type
+  switch(type) {
+    case 'success':
+      statusDiv.style.backgroundColor = '#d4edda';
+      statusDiv.style.color = '#155724';
+      statusDiv.style.border = '1px solid #c3e6cb';
+      break;
+    case 'error':
+      statusDiv.style.backgroundColor = '#f8d7da';
+      statusDiv.style.color = '#721c24';
+      statusDiv.style.border = '1px solid #f5c6cb';
+      break;
+    case 'warning':
+      statusDiv.style.backgroundColor = '#fff3cd';
+      statusDiv.style.color = '#856404';
+      statusDiv.style.border = '1px solid #ffeaa7';
+      break;
+    default:
+      statusDiv.style.backgroundColor = '#d1ecf1';
+      statusDiv.style.color = '#0c5460';
+      statusDiv.style.border = '1px solid #bee5eb';
+  }
+  
+  // Auto-hide after duration
+  setTimeout(() => {
+    statusDiv.style.display = 'none';
+  }, duration);
+}
+
+// Clear field highlighting when user starts typing
+function clearFieldHighlight(fieldId) {
+  document.getElementById(fieldId).style.borderColor = '';
+}
+
+// Add event listeners to clear highlighting
 document.addEventListener('DOMContentLoaded', function() {
+  // Add input event listeners to clear red borders
+  ['795', '797', '800'].forEach(area => {
+    const tempField = document.getElementById(`temp${area}`);
+    const humField = document.getElementById(`hum${area}`);
+    const staffField = document.getElementById(`staff${area}`);
+    const pressureField = document.getElementById(`pressure${area}`);
+    
+    if (tempField) tempField.addEventListener('input', () => clearFieldHighlight(`temp${area}`));
+    if (humField) humField.addEventListener('input', () => clearFieldHighlight(`hum${area}`));
+    if (staffField) staffField.addEventListener('input', () => clearFieldHighlight(`staff${area}`));
+    if (pressureField) pressureField.addEventListener('input', () => clearFieldHighlight(`pressure${area}`));
+  });
+  
   checkLogin();
   
   // Update environment info display

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Generation Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>PDF Generation Test</h1>
+    <button onclick="testPDF()">Generate Test PDF</button>
+    
+    <script>
+        function testPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Test various characters
+            doc.setFontSize(16);
+            doc.text('PDF Character Test', 20, 20);
+            
+            doc.setFontSize(12);
+            let yPos = 40;
+            
+            // Test problematic characters
+            doc.text('Original (with symbols):', 20, yPos);
+            yPos += 10;
+            doc.text('Temperature: 68-77°F', 30, yPos);
+            yPos += 8;
+            doc.text('Humidity: ≤60% RH', 30, yPos);
+            yPos += 8;
+            doc.text('Status: ✓ PASS / ✗ FAIL', 30, yPos);
+            yPos += 8;
+            doc.text('🧪 📊 📋 📝 Emojis', 30, yPos);
+            
+            yPos += 20;
+            doc.text('Fixed (text only):', 20, yPos);
+            yPos += 10;
+            doc.text('Temperature: 68-77 degrees F', 30, yPos);
+            yPos += 8;
+            doc.text('Humidity: 60% RH or less', 30, yPos);
+            yPos += 8;
+            doc.text('Status: PASS / FAIL', 30, yPos);
+            yPos += 8;
+            doc.text('COMPLIANCE SUMMARY', 30, yPos);
+            
+            // Download the test PDF
+            doc.save('pdf-character-test.pdf');
+        }
+    </script>
+</body>
+</html>
