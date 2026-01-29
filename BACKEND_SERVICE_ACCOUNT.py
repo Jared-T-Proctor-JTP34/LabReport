@@ -112,54 +112,43 @@ class GoogleDriveService:
             return False
     
     def test_folder_access(self):
-        """Test access to target folder"""
+        """Test service account drive access"""
         try:
             if not self.service:
                 return False
                 
-            # Try to access the target folder
-            folder = self.service.files().get(
-                fileId=CONFIG['TARGET_FOLDER_ID'],
-                fields='id,name,owners,permissions'
+            # Test basic drive access by listing files
+            results = self.service.files().list(
+                pageSize=1,
+                fields='files(id, name)'
             ).execute()
             
-            print(f"✅ Folder access confirmed: {folder.get('name')}")
-            print(f"📁 Folder ID: {folder.get('id')}")
+            print(f"✅ Service account drive access confirmed")
             
-            # Check permissions
-            permissions = self.service.permissions().list(
-                fileId=CONFIG['TARGET_FOLDER_ID']
-            ).execute()
-            
-            service_account_email = self.credentials.service_account_email
-            has_permission = any(
-                perm.get('emailAddress') == service_account_email 
-                for perm in permissions.get('permissions', [])
-            )
-            
-            if has_permission:
-                print(f"✅ Service account has folder permissions")
-            else:
-                print(f"⚠️ Service account may not have folder permissions")
-                print(f"📋 Share folder {CONFIG['TARGET_FOLDER_ID']} with: {service_account_email}")
+            # Test folder creation
+            folder_id = self.get_or_create_folder("Pharmacy Compliance Reports")
+            if folder_id:
+                print(f"✅ Folder ready for uploads: {folder_id}")
             
             return True
             
         except Exception as e:
-            print(f"❌ Folder access test failed: {e}")
-            print(f"📋 Please share folder {CONFIG['TARGET_FOLDER_ID']} with service account")
+            print(f"❌ Drive access test failed: {e}")
             return False
     
     def upload_file(self, filename, content, content_type='application/pdf'):
-        """Upload file to Google Drive"""
+        """Upload file to service account's Google Drive"""
         try:
             if not self.service:
                 raise Exception("Google Drive service not initialized")
             
+            # Create or get the Pharmacy Reports folder in service account drive
+            folder_id = self.get_or_create_folder("Pharmacy Compliance Reports")
+            
             # Prepare file metadata
             file_metadata = {
                 'name': filename,
-                'parents': [CONFIG['TARGET_FOLDER_ID']]
+                'parents': [folder_id]
             }
             
             # Handle different content types
@@ -180,24 +169,93 @@ class GoogleDriveService:
                 resumable=True
             )
             
-            # Upload file
+            # Upload file to service account's drive
             file = self.service.files().create(
                 body=file_metadata,
                 media_body=media,
                 fields='id,name,webViewLink'
             ).execute()
             
+            # Share the file with the target email
+            self.share_file_with_user(file.get('id'), CONFIG['TARGET_EMAIL'])
+            
             print(f"✅ File uploaded successfully: {file.get('name')}")
             print(f"📁 File ID: {file.get('id')}")
             print(f"🔗 View link: {file.get('webViewLink')}")
+            print(f"📧 Shared with: {CONFIG['TARGET_EMAIL']}")
             
             return {
                 'success': True,
                 'file_id': file.get('id'),
                 'file_name': file.get('name'),
                 'web_view_link': file.get('webViewLink'),
-                'message': f'File uploaded to {CONFIG["TARGET_EMAIL"]} Google Drive'
+                'message': f'File uploaded to service account drive and shared with {CONFIG["TARGET_EMAIL"]}'
             }
+            
+        except Exception as e:
+            print(f"❌ Upload failed: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Upload to Google Drive failed'
+            }
+    
+    def get_or_create_folder(self, folder_name):
+        """Get or create a folder in service account's drive"""
+        try:
+            # Search for existing folder
+            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = self.service.files().list(q=query, fields='files(id, name)').execute()
+            folders = results.get('files', [])
+            
+            if folders:
+                folder_id = folders[0]['id']
+                print(f"📁 Using existing folder: {folder_name} ({folder_id})")
+                return folder_id
+            else:
+                # Create new folder
+                folder_metadata = {
+                    'name': folder_name,
+                    'mimeType': 'application/vnd.google-apps.folder'
+                }
+                folder = self.service.files().create(
+                    body=folder_metadata,
+                    fields='id,name'
+                ).execute()
+                
+                folder_id = folder.get('id')
+                print(f"📁 Created new folder: {folder_name} ({folder_id})")
+                
+                # Share the folder with target email
+                self.share_file_with_user(folder_id, CONFIG['TARGET_EMAIL'])
+                
+                return folder_id
+                
+        except Exception as e:
+            print(f"❌ Folder creation failed: {e}")
+            # Return root folder as fallback
+            return 'root'
+    
+    def share_file_with_user(self, file_id, email):
+        """Share a file or folder with a specific user"""
+        try:
+            permission = {
+                'type': 'user',
+                'role': 'reader',
+                'emailAddress': email
+            }
+            
+            self.service.permissions().create(
+                fileId=file_id,
+                body=permission,
+                fields='id'
+            ).execute()
+            
+            print(f"✅ Shared file {file_id} with {email}")
+            
+        except Exception as e:
+            print(f"⚠️ Sharing failed: {e}")
+            # Don't fail the upload if sharing fails
             
         except Exception as e:
             print(f"❌ Upload failed: {e}")
