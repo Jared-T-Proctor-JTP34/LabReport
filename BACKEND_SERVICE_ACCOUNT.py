@@ -17,12 +17,17 @@ from googleapiclient.http import MediaIoBaseUpload
 import io
 
 app = Flask(__name__)
-# Configure CORS to allow requests from your domain
-CORS(app, origins=[
-    'https://labreporttool.xyz',
-    'https://jared-t-proctor-jtp34.github.io',
-    'http://localhost:*',
-    'http://127.0.0.1:*'
+# Configure CORS to allow requests from your domain with all necessary headers
+CORS(app, 
+     origins=[
+         'https://labreporttool.xyz',
+         'https://jared-t-proctor-jtp34.github.io',
+         'http://localhost:*',
+         'http://127.0.0.1:*'
+     ], 
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'OPTIONS'])
 ], supports_credentials=True)
 
 # Configuration - supports both local and Render deployment

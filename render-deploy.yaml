@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: pharmacy-compliance-backend
+    env: python
+    plan: free
+    buildCommand: pip install flask flask-cors
+    startCommand: python minimal_backend.py
+    repo: https://github.com/Jared-T-Proctor-JTP34/LabReport.git
