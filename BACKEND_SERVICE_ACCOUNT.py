@@ -28,7 +28,6 @@ CORS(app,
      supports_credentials=True,
      allow_headers=['Content-Type', 'Authorization'],
      methods=['GET', 'POST', 'OPTIONS'])
-], supports_credentials=True)
 
 # Configuration - supports both local and Render deployment
 CONFIG = {
