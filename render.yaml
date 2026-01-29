@@ -4,8 +4,8 @@ services:
     env: python
     plan: free
     rootDir: .
-    buildCommand: pip install -r ./requirements.txt
-    startCommand: python ./BACKEND_SERVICE_ACCOUNT.py
+    buildCommand: pip install -r requirements.txt
+    startCommand: python BACKEND_SERVICE_ACCOUNT.py
     envVars:
       - key: TARGET_EMAIL
         value: labreporting1177@gmail.com
@@ -17,6 +17,7 @@ services:
         value: lap-reports
       - key: GOOGLE_CLIENT_ID
         value: 113380403214174229428
-      # Note: Sensitive values like GOOGLE_PRIVATE_KEY and GOOGLE_PRIVATE_KEY_ID
-      # should be set manually in Render dashboard for security
+      - key: GOOGLE_CLIENT_EMAIL
+        value: pharmacy-compliance-reports@lap-reports.iam.gserviceaccount.com
+      # Note: Add GOOGLE_PRIVATE_KEY and GOOGLE_PRIVATE_KEY_ID manually in dashboard
       # Note: PORT is automatically assigned by Render - do not set manually
